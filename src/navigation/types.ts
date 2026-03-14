@@ -7,6 +7,11 @@
 import { Meal } from '../types';
 
 export type RootStackParamList = {
+  // Auth screens
+  Login: undefined;
+  Register: undefined;
+  
+  // App screens
   Dashboard: undefined;
   AddMeal: { meal?: Meal } | undefined;
   History: undefined;
