@@ -37,6 +37,7 @@ interface MealStore {
   // Actions - Meals
   loadTodayLog: () => Promise<void>;
   addMeal: (name: string, proteinGrams: number, mealType: MealType) => Promise<void>;
+  updateMeal: (meal: Meal) => Promise<void>;
   deleteMeal: (mealId: string) => Promise<void>;
   
   // Computed (getters)
@@ -135,6 +136,13 @@ export const useMealStore = create<MealStore>((set, get) => ({
     set({ todayLog: updatedLog });
   },
   
+  // Update an existing meal
+  updateMeal: async (meal: Meal) => {
+    const today = getTodayDate();
+    const updatedLog = await storage.updateMeal(today, meal);
+    set({ todayLog: updatedLog });
+  },
+
   // Delete a meal
   deleteMeal: async (mealId: string) => {
     const today = getTodayDate();

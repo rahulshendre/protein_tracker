@@ -13,6 +13,7 @@ import { Meal, MealType } from '../types';
 
 interface MealCardProps {
   meal: Meal;
+  onEdit: (meal: Meal) => void;
   onDelete: (id: string) => void;
 }
 
@@ -31,11 +32,11 @@ const mealTypeLabels: Record<MealType, string> = {
   snack: 'Snack',
 };
 
-export function MealCard({ meal, onDelete }: MealCardProps) {
+export function MealCard({ meal, onEdit, onDelete }: MealCardProps) {
   const timeString = format(new Date(meal.timestamp), 'h:mm a');
   
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={() => onEdit(meal)} activeOpacity={0.7}>
       {/* Meal type icon */}
       <View style={styles.iconContainer}>
         <Text style={styles.icon}>{mealTypeIcons[meal.mealType]}</Text>
@@ -63,7 +64,7 @@ export function MealCard({ meal, onDelete }: MealCardProps) {
       >
         <Text style={styles.deleteText}>×</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 

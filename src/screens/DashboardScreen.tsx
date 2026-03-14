@@ -26,6 +26,7 @@ import { useMealStore } from '../stores/mealStore';
 import { ProgressBar } from '../components/ProgressBar';
 import { MealCard } from '../components/MealCard';
 import { RootStackParamList } from '../navigation/types';
+import { Meal } from '../types';
 
 type DashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
@@ -56,6 +57,10 @@ export function DashboardScreen() {
     navigation.navigate('AddMeal');
   };
   
+  const handleEditMeal = (meal: Meal) => {
+    navigation.navigate('AddMeal', { meal });
+  };
+
   const handleDeleteMeal = (mealId: string) => {
     deleteMeal(mealId);
   };
@@ -107,7 +112,7 @@ export function DashboardScreen() {
             data={todayLog.meals}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <MealCard meal={item} onDelete={handleDeleteMeal} />
+              <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
             )}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.mealsList}

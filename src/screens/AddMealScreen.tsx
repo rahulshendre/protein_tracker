@@ -20,10 +20,11 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS, FONT_SIZES, SPACING } from '../constants';
 import { useMealStore } from '../stores/mealStore';
 import { MealType } from '../types';
+import { RootStackParamList } from '../navigation/types';
 
 const mealTypes: { type: MealType; label: string; icon: string }[] = [
   { type: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -32,14 +33,32 @@ const mealTypes: { type: MealType; label: string; icon: string }[] = [
   { type: 'snack', label: 'Snack', icon: '🍎' },
 ];
 
+const quickPresets = [
+  { name: 'Chicken Breast', protein: 31, icon: '🍗' },
+  { name: 'Eggs (2)', protein: 12, icon: '🥚' },
+  { name: 'Protein Shake', protein: 25, icon: '🥤' },
+  { name: 'Greek Yogurt', protein: 17, icon: '🥛' },
+  { name: 'Salmon', protein: 25, icon: '🐟' },
+  { name: 'Tofu', protein: 20, icon: '🧈' },
+];
+
 export function AddMealScreen() {
   const navigation = useNavigation();
-  const addMeal = useMealStore((state) => state.addMeal);
+  const route = useRoute<RouteProp<RootStackParamList, 'AddMeal'>>();
+  const editingMeal = route.params?.meal;
+  const isEditing = !!editingMeal;
   
-  const [name, setName] = useState('');
-  const [protein, setProtein] = useState('');
-  const [selectedType, setSelectedType] = useState<MealType>('lunch');
+  const { addMeal, updateMeal } = useMealStore();
+  
+  const [name, setName] = useState(editingMeal?.name || '');
+  const [protein, setProtein] = useState(editingMeal?.proteinGrams.toString() || '');
+  const [selectedType, setSelectedType] = useState<MealType>(editingMeal?.mealType || 'lunch');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePreset = (preset: typeof quickPresets[0]) => {
+    setName(preset.name);
+    setProtein(preset.protein.toString());
+  };
 
   const handleSubmit = async () => {
     // Validation
@@ -57,7 +76,16 @@ export function AddMealScreen() {
     setIsSubmitting(true);
     
     try {
-      await addMeal(name.trim(), proteinValue, selectedType);
+      if (isEditing && editingMeal) {
+        await updateMeal({
+          ...editingMeal,
+          name: name.trim(),
+          proteinGrams: proteinValue,
+          mealType: selectedType,
+        });
+      } else {
+        await addMeal(name.trim(), proteinValue, selectedType);
+      }
       navigation.goBack();
     } catch (error) {
       Alert.alert('Error', 'Failed to save meal. Please try again.');
@@ -81,10 +109,32 @@ export function AddMealScreen() {
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.cancelButton}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Add Meal</Text>
+            <Text style={styles.title}>{isEditing ? 'Edit Meal' : 'Add Meal'}</Text>
             <View style={{ width: 60 }} />
           </View>
           
+          {/* Quick Presets */}
+          {!isEditing && (
+            <View style={styles.presetsSection}>
+              <Text style={styles.presetsLabel}>Quick Add</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.presetsRow}>
+                  {quickPresets.map((preset) => (
+                    <TouchableOpacity
+                      key={preset.name}
+                      style={styles.presetButton}
+                      onPress={() => handlePreset(preset)}
+                    >
+                      <Text style={styles.presetIcon}>{preset.icon}</Text>
+                      <Text style={styles.presetName} numberOfLines={1}>{preset.name}</Text>
+                      <Text style={styles.presetProtein}>{preset.protein}g</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+
           {/* Form */}
           <View style={styles.form}>
             {/* Meal Name */}
@@ -148,7 +198,7 @@ export function AddMealScreen() {
             disabled={isSubmitting}
           >
             <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Saving...' : 'Add Meal'}
+              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Meal'}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -250,5 +300,41 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontWeight: '600',
     color: COLORS.textLight,
+  },
+  presetsSection: {
+    marginBottom: SPACING.lg,
+  },
+  presetsLabel: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  presetsRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  presetButton: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: SPACING.sm,
+    alignItems: 'center',
+    width: 80,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  presetIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  presetName: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  presetProtein: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });
