@@ -1,12 +1,3 @@
-/**
- * AddMeal Screen
- * 
- * Form to add a new meal entry.
- * - Meal name input
- * - Protein amount input
- * - Meal type selector
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -21,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
 import { MealType } from '../types';
@@ -63,7 +54,6 @@ export function AddMealScreen() {
   };
 
   const handleSubmit = async () => {
-    // Validation
     if (!name.trim()) {
       Alert.alert('Missing Name', 'Please enter a meal name');
       return;
@@ -111,25 +101,34 @@ export function AddMealScreen() {
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={[styles.cancelButton, { color: colors.primary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.text }]}>{isEditing ? 'Edit Meal' : 'Add Meal'}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              {isEditing ? 'Edit Meal' : 'Add Meal'}
+            </Text>
             <View style={{ width: 60 }} />
           </View>
           
           {/* Quick Presets */}
           {!isEditing && (
             <View style={styles.presetsSection}>
-              <Text style={styles.presetsLabel}>Quick Add</Text>
+              <Text style={[styles.presetsLabel, { color: colors.text }]}>Quick Add</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.presetsRow}>
                   {quickPresets.map((preset) => (
                     <TouchableOpacity
                       key={preset.name}
-                      style={styles.presetButton}
+                      style={[styles.presetButton, { 
+                        backgroundColor: colors.surface, 
+                        borderColor: colors.border 
+                      }]}
                       onPress={() => handlePreset(preset)}
                     >
                       <Text style={styles.presetIcon}>{preset.icon}</Text>
-                      <Text style={styles.presetName} numberOfLines={1}>{preset.name}</Text>
-                      <Text style={styles.presetProtein}>{preset.protein}g</Text>
+                      <Text style={[styles.presetName, { color: colors.text }]} numberOfLines={1}>
+                        {preset.name}
+                      </Text>
+                      <Text style={[styles.presetProtein, { color: colors.primary }]}>
+                        {preset.protein}g
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -141,9 +140,13 @@ export function AddMealScreen() {
           <View style={styles.form}>
             {/* Meal Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Meal Name</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Meal Name</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  backgroundColor: colors.surface, 
+                  color: colors.text,
+                  borderColor: colors.border 
+                }]}
                 placeholder="e.g., Chicken Breast, Protein Shake"
                 placeholderTextColor={colors.disabled}
                 value={name}
@@ -154,9 +157,13 @@ export function AddMealScreen() {
             
             {/* Protein Amount */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Protein (grams)</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Protein (grams)</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  backgroundColor: colors.surface, 
+                  color: colors.text,
+                  borderColor: colors.border 
+                }]}
                 placeholder="e.g., 25"
                 placeholderTextColor={colors.disabled}
                 value={protein}
@@ -167,14 +174,18 @@ export function AddMealScreen() {
             
             {/* Meal Type */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Meal Type</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Meal Type</Text>
               <View style={styles.typeGrid}>
                 {mealTypes.map((item) => (
                   <TouchableOpacity
                     key={item.type}
                     style={[
                       styles.typeButton,
-                      selectedType === item.type && styles.typeButtonSelected,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      selectedType === item.type && { 
+                        borderColor: colors.primary, 
+                        backgroundColor: colors.primaryLight 
+                      },
                     ]}
                     onPress={() => setSelectedType(item.type)}
                   >
@@ -182,7 +193,8 @@ export function AddMealScreen() {
                     <Text 
                       style={[
                         styles.typeLabel,
-                        selectedType === item.type && styles.typeLabelSelected,
+                        { color: colors.textSecondary },
+                        selectedType === item.type && { color: colors.primaryDark },
                       ]}
                     >
                       {item.label}
@@ -195,7 +207,11 @@ export function AddMealScreen() {
           
           {/* Submit Button */}
           <TouchableOpacity 
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton, 
+              { backgroundColor: colors.primary },
+              isSubmitting && { backgroundColor: colors.disabled }
+            ]}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
@@ -212,7 +228,6 @@ export function AddMealScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   keyboardView: {
     flex: 1,
@@ -229,12 +244,10 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.primary,
   },
   title: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
-    color: COLORS.text,
   },
   form: {
     flex: 1,
@@ -245,17 +258,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.text,
     marginBottom: SPACING.sm,
   },
   textInput: {
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.md,
     fontSize: FONT_SIZES.md,
-    color: COLORS.text,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   typeGrid: {
     flexDirection: 'row',
@@ -265,16 +274,10 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.md,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  typeButtonSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
   },
   typeIcon: {
     fontSize: 24,
@@ -282,26 +285,18 @@ const styles = StyleSheet.create({
   },
   typeLabel: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  typeLabelSelected: {
-    color: COLORS.primaryDark,
-  },
   submitButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     padding: SPACING.md,
     alignItems: 'center',
     marginTop: SPACING.lg,
   },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.disabled,
-  },
   submitButtonText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: '#FFFFFF',
   },
   presetsSection: {
     marginBottom: SPACING.lg,
@@ -309,7 +304,6 @@ const styles = StyleSheet.create({
   presetsLabel: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.text,
     marginBottom: SPACING.sm,
   },
   presetsRow: {
@@ -317,13 +311,11 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   presetButton: {
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.sm,
     alignItems: 'center',
     width: 80,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   presetIcon: {
     fontSize: 24,
@@ -331,12 +323,10 @@ const styles = StyleSheet.create({
   },
   presetName: {
     fontSize: FONT_SIZES.xs,
-    color: COLORS.text,
     textAlign: 'center',
   },
   presetProtein: {
     fontSize: FONT_SIZES.xs,
-    color: COLORS.primary,
     fontWeight: '600',
   },
 });
