@@ -11,6 +11,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { AddMealScreen } from './src/screens/AddMealScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { COLORS } from './src/constants';
 
@@ -37,6 +39,8 @@ function App(): React.JSX.Element {
               animation: 'slide_from_bottom',
             }}
           />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="History" component={HistoryScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

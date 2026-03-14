@@ -66,8 +66,24 @@ export function DashboardScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Today's Progress</Text>
-        <Text style={styles.date}>{todayFormatted}</Text>
+        <View>
+          <Text style={styles.greeting}>Today's Progress</Text>
+          <Text style={styles.date}>{todayFormatted}</Text>
+        </View>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.headerButton} 
+            onPress={() => navigation.navigate('History')}
+          >
+            <Text style={styles.headerButtonText}>📅</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.headerButtonText}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       {/* Progress Section */}
@@ -121,8 +137,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerButtonText: {
+    fontSize: 18,
   },
   greeting: {
     fontSize: FONT_SIZES.xl,
