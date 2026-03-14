@@ -17,6 +17,7 @@
     "date-fns": "^4.1.0",
     "react": "19.2.3",
     "react-native": "0.84.1",
+    "react-native-get-random-values": "^2.0.0",
     "react-native-safe-area-context": "^5.7.0",
     "react-native-screens": "^4.24.0",
     "uuid": "^13.0.0",
