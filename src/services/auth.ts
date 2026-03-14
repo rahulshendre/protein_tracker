@@ -43,6 +43,17 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
   return { error: null };
 }
 
+// Reset password (send email)
+export async function resetPassword(email: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+  if (error) {
+    return { error: { message: error.message } };
+  }
+
+  return { error: null };
+}
+
 // Get current user
 export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();

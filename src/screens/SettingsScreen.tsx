@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { FONT_SIZES, SPACING } from '../constants';
 import { useMealStore } from '../stores/mealStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTheme } from '../context/ThemeContext';
+import { ThemedDialog } from '../components';
 
 export function SettingsScreen() {
   const navigation = useNavigation();
@@ -22,10 +22,14 @@ export function SettingsScreen() {
   const { signOut, user } = useAuthStore();
   const [goalInput, setGoalInput] = useState(settings.dailyProteinGoal.toString());
 
+  // Dialog states
+  const [errorDialog, setErrorDialog] = useState(false);
+  const [signOutDialog, setSignOutDialog] = useState(false);
+
   const handleSave = async () => {
     const goal = parseInt(goalInput, 10);
     if (isNaN(goal) || goal < 1 || goal > 500) {
-      Alert.alert('Invalid Goal', 'Please enter a value between 1 and 500');
+      setErrorDialog(true);
       return;
     }
     await updateGoal(goal);
@@ -88,16 +92,31 @@ export function SettingsScreen() {
 
         <TouchableOpacity 
           style={[styles.signOutButton, { borderColor: colors.error }]} 
-          onPress={() => {
-            Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign Out', style: 'destructive', onPress: signOut },
-            ]);
-          }}
+          onPress={() => setSignOutDialog(true)}
         >
           <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Error Dialog */}
+      <ThemedDialog
+        visible={errorDialog}
+        title="Invalid Goal"
+        message="Please enter a value between 1 and 500"
+        onClose={() => setErrorDialog(false)}
+      />
+
+      {/* Sign Out Confirmation */}
+      <ThemedDialog
+        visible={signOutDialog}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Sign Out', style: 'destructive', onPress: signOut },
+        ]}
+        onClose={() => setSignOutDialog(false)}
+      />
     </SafeAreaView>
   );
 }

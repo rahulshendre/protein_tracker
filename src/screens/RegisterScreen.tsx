@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -29,19 +29,39 @@ export function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Dialog states
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogAction, setDialogAction] = useState<(() => void) | null>(null);
+
+  const showAlert = (title: string, message: string, onClose?: () => void) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogAction(() => onClose || null);
+    setShowDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setShowDialog(false);
+    if (dialogAction) {
+      dialogAction();
+    }
+  };
+
   const handleRegister = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showAlert('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      showAlert('Error', 'Password must be at least 6 characters');
       return;
     }
 
@@ -50,12 +70,12 @@ export function RegisterScreen() {
     setIsLoading(false);
 
     if (error) {
-      Alert.alert('Registration Failed', error);
+      showAlert('Registration Failed', error);
     } else {
-      Alert.alert(
+      showAlert(
         'Check Your Email',
         'We sent you a confirmation link. Please verify your email to continue.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        () => navigation.navigate('Login')
       );
     }
   };
@@ -133,6 +153,31 @@ export function RegisterScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Themed Alert Dialog */}
+      <Modal
+        visible={showDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDialogClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.dialogBox, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.dialogTitle, { color: colors.text }]}>
+              {dialogTitle}
+            </Text>
+            <Text style={[styles.dialogMessage, { color: colors.textSecondary }]}>
+              {dialogMessage}
+            </Text>
+            <TouchableOpacity
+              style={[styles.dialogButton, { backgroundColor: colors.primary }]}
+              onPress={handleDialogClose}
+            >
+              <Text style={styles.dialogButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -193,5 +238,42 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  dialogBox: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  dialogMessage: {
+    fontSize: FONT_SIZES.md,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+    lineHeight: 22,
+  },
+  dialogButton: {
+    width: '100%',
+    borderRadius: 10,
+    padding: SPACING.md,
+    alignItems: 'center',
+  },
+  dialogButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

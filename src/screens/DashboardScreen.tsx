@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   StatusBar,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,8 +14,7 @@ import { format } from 'date-fns';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
-import { ProgressBar } from '../components/ProgressBar';
-import { MealCard } from '../components/MealCard';
+import { ProgressBar, MealCard, ThemedDialog } from '../components';
 import { RootStackParamList } from '../navigation/types';
 import { Meal } from '../types';
 
@@ -37,6 +35,10 @@ export function DashboardScreen() {
   
   const stats = getDailyStats();
   const todayFormatted = format(new Date(), 'EEEE, MMMM d');
+
+  // Delete confirmation dialog state
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [mealToDelete, setMealToDelete] = useState<string | null>(null);
   
   useEffect(() => {
     loadSettings();
@@ -52,14 +54,15 @@ export function DashboardScreen() {
   };
 
   const handleDeleteMeal = (mealId: string) => {
-    Alert.alert(
-      'Delete Meal',
-      'Are you sure you want to delete this meal?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMeal(mealId) },
-      ]
-    );
+    setMealToDelete(mealId);
+    setDeleteDialogVisible(true);
+  };
+
+  const confirmDelete = () => {
+    if (mealToDelete) {
+      deleteMeal(mealToDelete);
+      setMealToDelete(null);
+    }
   };
 
   return (
@@ -129,6 +132,18 @@ export function DashboardScreen() {
       <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleAddMeal}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
+
+      {/* Delete Confirmation Dialog */}
+      <ThemedDialog
+        visible={deleteDialogVisible}
+        title="Delete Meal"
+        message="Are you sure you want to delete this meal?"
+        buttons={[
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Delete', style: 'destructive', onPress: confirmDelete },
+        ]}
+        onClose={() => setDeleteDialogVisible(false)}
+      />
     </SafeAreaView>
   );
 }

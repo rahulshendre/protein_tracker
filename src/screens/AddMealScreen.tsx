@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
+import { ThemedDialog } from '../components';
 import { MealType } from '../types';
 import { RootStackParamList } from '../navigation/types';
 
@@ -48,6 +48,17 @@ export function AddMealScreen() {
   const [selectedType, setSelectedType] = useState<MealType>(editingMeal?.mealType || 'lunch');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Dialog states
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+
+  const showError = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogVisible(true);
+  };
+
   const handlePreset = (preset: typeof quickPresets[0]) => {
     setName(preset.name);
     setProtein(preset.protein.toString());
@@ -55,13 +66,13 @@ export function AddMealScreen() {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      Alert.alert('Missing Name', 'Please enter a meal name');
+      showError('Missing Name', 'Please enter a meal name');
       return;
     }
     
     const proteinValue = parseFloat(protein);
     if (isNaN(proteinValue) || proteinValue <= 0) {
-      Alert.alert('Invalid Protein', 'Please enter a valid protein amount');
+      showError('Invalid Protein', 'Please enter a valid protein amount');
       return;
     }
     
@@ -80,7 +91,7 @@ export function AddMealScreen() {
       }
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save meal. Please try again.');
+      showError('Error', 'Failed to save meal. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -221,6 +232,14 @@ export function AddMealScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Error Dialog */}
+      <ThemedDialog
+        visible={dialogVisible}
+        title={dialogTitle}
+        message={dialogMessage}
+        onClose={() => setDialogVisible(false)}
+      />
     </SafeAreaView>
   );
 }
