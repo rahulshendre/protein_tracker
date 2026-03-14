@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { useTheme } from '../context/ThemeContext';
 import { DailyLog } from '../types';
 import * as storage from '../services/storage';
 
@@ -20,6 +21,7 @@ interface HistoryItem {
 
 export function HistoryScreen() {
   const navigation = useNavigation();
+  const { colors } = useTheme();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,21 +54,21 @@ export function HistoryScreen() {
     const metGoal = percent >= 100;
 
     return (
-      <View style={styles.historyCard}>
+      <View style={[styles.historyCard, { backgroundColor: colors.surface }]}>
         <View style={styles.dateSection}>
-          <Text style={styles.dateText}>
+          <Text style={[styles.dateText, { color: colors.text }]}>
             {format(parseISO(item.date), 'EEE, MMM d')}
           </Text>
-          <Text style={styles.mealsCount}>
+          <Text style={[styles.mealsCount, { color: colors.textSecondary }]}>
             {item.log?.meals.length || 0} meals
           </Text>
         </View>
         
         <View style={styles.statsSection}>
-          <Text style={[styles.proteinText, metGoal && styles.goalMet]}>
+          <Text style={[styles.proteinText, { color: metGoal ? colors.success : colors.text }]}>
             {total}g / {goal}g
           </Text>
-          <Text style={[styles.statusText, metGoal ? styles.goalMet : styles.goalMissed]}>
+          <Text style={[styles.statusText, { color: metGoal ? colors.success : colors.textSecondary }]}>
             {metGoal ? '✓ Goal met' : `${percent}%`}
           </Text>
         </View>
@@ -75,24 +77,24 @@ export function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: colors.primary }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>History</Text>
+        <Text style={[styles.title, { color: colors.text }]}>History</Text>
         <View style={{ width: 50 }} />
       </View>
 
       {loading ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Loading...</Text>
+          <Text style={[styles.emptyText, { color: colors.text }]}>Loading...</Text>
         </View>
       ) : history.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📅</Text>
-          <Text style={styles.emptyText}>No history yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: colors.text }]}>No history yet</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             Start logging meals to see your history
           </Text>
         </View>

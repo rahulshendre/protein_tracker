@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
 import { MealType } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -45,6 +46,7 @@ const quickPresets = [
 export function AddMealScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'AddMeal'>>();
+  const { colors } = useTheme();
   const editingMeal = route.params?.meal;
   const isEditing = !!editingMeal;
   
@@ -95,7 +97,7 @@ export function AddMealScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -107,9 +109,9 @@ export function AddMealScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.cancelButton}>Cancel</Text>
+              <Text style={[styles.cancelButton, { color: colors.primary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>{isEditing ? 'Edit Meal' : 'Add Meal'}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{isEditing ? 'Edit Meal' : 'Add Meal'}</Text>
             <View style={{ width: 60 }} />
           </View>
           
@@ -143,7 +145,7 @@ export function AddMealScreen() {
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g., Chicken Breast, Protein Shake"
-                placeholderTextColor={COLORS.disabled}
+                placeholderTextColor={colors.disabled}
                 value={name}
                 onChangeText={setName}
                 autoFocus
@@ -156,7 +158,7 @@ export function AddMealScreen() {
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g., 25"
-                placeholderTextColor={COLORS.disabled}
+                placeholderTextColor={colors.disabled}
                 value={protein}
                 onChangeText={setProtein}
                 keyboardType="decimal-pad"

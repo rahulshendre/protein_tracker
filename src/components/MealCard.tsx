@@ -1,14 +1,8 @@
-/**
- * MealCard Component
- * 
- * Displays a single meal entry with name, protein amount, and type.
- * Includes swipe-to-delete functionality.
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { format } from 'date-fns';
-import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING } from '../constants';
+import { useTheme } from '../context/ThemeContext';
 import { Meal, MealType } from '../types';
 
 interface MealCardProps {
@@ -17,7 +11,6 @@ interface MealCardProps {
   onDelete: (id: string) => void;
 }
 
-// Emoji icons for meal types
 const mealTypeIcons: Record<MealType, string> = {
   breakfast: '🌅',
   lunch: '☀️',
@@ -33,36 +26,43 @@ const mealTypeLabels: Record<MealType, string> = {
 };
 
 export function MealCard({ meal, onEdit, onDelete }: MealCardProps) {
+  const { colors } = useTheme();
   const timeString = format(new Date(meal.timestamp), 'h:mm a');
   
   return (
-    <TouchableOpacity style={styles.container} onPress={() => onEdit(meal)} activeOpacity={0.7}>
-      {/* Meal type icon */}
-      <View style={styles.iconContainer}>
+    <TouchableOpacity 
+      style={[styles.container, { backgroundColor: colors.surface }]} 
+      onPress={() => onEdit(meal)} 
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
         <Text style={styles.icon}>{mealTypeIcons[meal.mealType]}</Text>
       </View>
       
-      {/* Meal details */}
       <View style={styles.details}>
-        <Text style={styles.name} numberOfLines={1}>{meal.name}</Text>
-        <Text style={styles.meta}>
+        <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+          {meal.name}
+        </Text>
+        <Text style={[styles.meta, { color: colors.textSecondary }]}>
           {mealTypeLabels[meal.mealType]} • {timeString}
         </Text>
       </View>
       
-      {/* Protein amount */}
       <View style={styles.proteinContainer}>
-        <Text style={styles.proteinAmount}>{meal.proteinGrams}g</Text>
-        <Text style={styles.proteinLabel}>protein</Text>
+        <Text style={[styles.proteinAmount, { color: colors.primary }]}>
+          {meal.proteinGrams}g
+        </Text>
+        <Text style={[styles.proteinLabel, { color: colors.textSecondary }]}>
+          protein
+        </Text>
       </View>
       
-      {/* Delete button */}
       <TouchableOpacity 
-        style={styles.deleteButton}
+        style={[styles.deleteButton, { backgroundColor: colors.border }]}
         onPress={() => onDelete(meal.id)}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.deleteText}>×</Text>
+        <Text style={[styles.deleteText, { color: colors.textSecondary }]}>×</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -72,7 +72,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.md,
     marginHorizontal: SPACING.md,
@@ -87,7 +86,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -101,11 +99,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.text,
   },
   meta: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   proteinContainer: {
@@ -115,23 +111,19 @@ const styles = StyleSheet.create({
   proteinAmount: {
     fontSize: FONT_SIZES.lg,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
   proteinLabel: {
     fontSize: FONT_SIZES.xs,
-    color: COLORS.textSecondary,
   },
   deleteButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   deleteText: {
     fontSize: 18,
-    color: COLORS.textSecondary,
     fontWeight: 'bold',
     marginTop: -2,
   },

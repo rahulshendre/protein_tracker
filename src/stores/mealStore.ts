@@ -33,6 +33,7 @@ interface MealStore {
   // Actions - Settings
   loadSettings: () => Promise<void>;
   updateGoal: (goal: number) => Promise<void>;
+  updateTheme: (theme: 'light' | 'dark') => Promise<void>;
   
   // Actions - Meals
   loadTodayLog: () => Promise<void>;
@@ -102,6 +103,14 @@ export const useMealStore = create<MealStore>((set, get) => ({
   updateGoal: async (goal: number) => {
     const { settings } = get();
     const newSettings = { ...settings, dailyProteinGoal: goal };
+    await storage.saveSettings(newSettings);
+    set({ settings: newSettings });
+  },
+
+  // Update theme
+  updateTheme: async (theme: 'light' | 'dark') => {
+    const { settings } = get();
+    const newSettings = { ...settings, theme };
     await storage.saveSettings(newSettings);
     set({ settings: newSettings });
   },

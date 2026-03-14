@@ -6,14 +6,17 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING } from '../constants';
 import { useMealStore } from '../stores/mealStore';
+import { useTheme } from '../context/ThemeContext';
 
 export function SettingsScreen() {
   const navigation = useNavigation();
+  const { colors, isDark, toggleTheme } = useTheme();
   const { settings, updateGoal } = useMealStore();
   const [goalInput, setGoalInput] = useState(settings.dailyProteinGoal.toString());
 
@@ -28,32 +31,50 @@ export function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: colors.primary }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
         <View style={{ width: 50 }} />
       </View>
 
       <View style={styles.content}>
-        <View style={styles.setting}>
-          <Text style={styles.label}>Daily Protein Goal (g)</Text>
+        {/* Protein Goal */}
+        <View style={[styles.setting, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Daily Protein Goal (g)</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             value={goalInput}
             onChangeText={setGoalInput}
             keyboardType="number-pad"
             maxLength={3}
+            placeholderTextColor={colors.disabled}
           />
         </View>
 
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, { color: colors.textSecondary }]}>
           Recommended: 0.8-1g per pound of body weight for muscle building
         </Text>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        {/* Dark Mode Toggle */}
+        <View style={[styles.setting, styles.toggleSetting, { backgroundColor: colors.surface }]}>
+          <View>
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>Dark Mode</Text>
+            <Text style={[styles.toggleHint, { color: colors.textSecondary }]}>
+              {isDark ? 'Currently on' : 'Currently off'}
+            </Text>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.border, true: colors.primaryLight }}
+            thumbColor={isDark ? colors.primary : '#f4f3f4'}
+          />
+        </View>
+
+        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -64,7 +85,6 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -74,47 +94,54 @@ const styles = StyleSheet.create({
   },
   backButton: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.primary,
   },
   title: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
-    color: COLORS.text,
   },
   content: {
     padding: SPACING.lg,
   },
   setting: {
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.md,
   },
   label: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
   input: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
-    color: COLORS.text,
     padding: 0,
   },
   hint: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
+  },
+  toggleSetting: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  toggleLabel: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+  },
+  toggleHint: {
+    fontSize: FONT_SIZES.sm,
+    marginTop: 2,
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     padding: SPACING.md,
     alignItems: 'center',
+    marginTop: SPACING.md,
   },
   saveButtonText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: '#FFFFFF',
   },
 });
