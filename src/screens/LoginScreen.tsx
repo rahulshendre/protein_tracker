@@ -71,7 +71,15 @@ export function LoginScreen() {
     setIsResetting(false);
 
     if (error) {
-      showAlert('Error', error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes('rate') || msg.includes('limit') || msg.includes('too many')) {
+        showAlert(
+          'Too Many Requests',
+          'Please wait a few minutes before requesting another reset email.'
+        );
+      } else {
+        showAlert('Error', error.message);
+      }
     } else {
       setShowForgotModal(false);
       setResetEmail('');
