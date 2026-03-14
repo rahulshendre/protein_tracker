@@ -13,6 +13,8 @@ import { COLORS, FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { DailyLog } from '../types';
 import * as storage from '../services/storage';
+import * as cloudData from '../services/supabaseData';
+import { useAuthStore } from '../stores/authStore';
 
 interface HistoryItem {
   date: string;
@@ -22,6 +24,7 @@ interface HistoryItem {
 export function HistoryScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { user } = useAuthStore();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,16 +33,48 @@ export function HistoryScreen() {
   }, []);
 
   const loadHistory = async () => {
-    const dates = await storage.getHistoryDates();
-    const items: HistoryItem[] = [];
-    
-    for (const date of dates.slice(0, 30)) {
-      const log = await storage.getDailyLog(date);
-      items.push({ date, log });
+    try {
+      let dates: string[] = [];
+      
+      // Try cloud first if logged in
+      if (user?.id) {
+        dates = await cloudData.getCloudHistory(user.id, 30);
+      }
+      
+      // Fallback to local
+      if (dates.length === 0) {
+        dates = await storage.getHistoryDates();
+      }
+
+      const items: HistoryItem[] = [];
+      for (const date of dates.slice(0, 30)) {
+        let log: DailyLog | null = null;
+        
+        if (user?.id) {
+          log = await cloudData.getCloudDailyLog(user.id, date);
+        }
+        
+        if (!log) {
+          log = await storage.getDailyLog(date);
+        }
+        
+        items.push({ date, log });
+      }
+
+      setHistory(items);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      // Fallback to local only
+      const dates = await storage.getHistoryDates();
+      const items: HistoryItem[] = [];
+      for (const date of dates.slice(0, 30)) {
+        const log = await storage.getDailyLog(date);
+        items.push({ date, log });
+      }
+      setHistory(items);
+    } finally {
+      setLoading(false);
     }
-    
-    setHistory(items);
-    setLoading(false);
   };
 
   const getTotalProtein = (log: DailyLog | null) => {
