@@ -12,12 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useMealStore } from '../stores/mealStore';
+import { useAuthStore } from '../stores/authStore';
 import { useTheme } from '../context/ThemeContext';
 
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { settings, updateGoal } = useMealStore();
+  const { signOut, user } = useAuthStore();
   const [goalInput, setGoalInput] = useState(settings.dailyProteinGoal.toString());
 
   const handleSave = async () => {
@@ -76,6 +78,24 @@ export function SettingsScreen() {
 
         <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+
+        {/* Account Section */}
+        <View style={[styles.setting, { backgroundColor: colors.surface, marginTop: SPACING.xl }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Account</Text>
+          <Text style={[styles.email, { color: colors.text }]}>{user?.email}</Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.signOutButton, { borderColor: colors.error }]} 
+          onPress={() => {
+            Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign Out', style: 'destructive', onPress: signOut },
+            ]);
+          }}
+        >
+          <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -143,5 +163,20 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  email: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '500',
+  },
+  signOutButton: {
+    borderRadius: 12,
+    padding: SPACING.md,
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    borderWidth: 2,
+  },
+  signOutText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
 });
