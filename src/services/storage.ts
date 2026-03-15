@@ -24,6 +24,8 @@ export async function getSettings(): Promise<UserSettings> {
     const parsed = json ? JSON.parse(json) : null;
     return {
       dailyProteinGoal: parsed?.dailyProteinGoal ?? DEFAULTS.dailyProteinGoal,
+      dailyWaterGoalMl: parsed?.dailyWaterGoalMl ?? parsed?.dailyWaterGoal != null ? parsed.dailyWaterGoal * 250 : DEFAULTS.dailyWaterGoalMl,
+      waterUnit: parsed?.waterUnit ?? DEFAULTS.waterUnit,
       theme: parsed?.theme ?? DEFAULTS.theme,
       reminderEnabled: parsed?.reminderEnabled ?? DEFAULTS.reminderEnabled,
       reminderTime: parsed?.reminderTime ?? DEFAULTS.reminderTime,
@@ -116,6 +118,35 @@ export async function deleteMeal(date: string, mealId: string): Promise<DailyLog
   
   await saveDailyLog(updatedLog);
   return updatedLog;
+}
+
+// ============================================
+// WATER (ml per day, stored canonically)
+// ============================================
+
+function getWaterKey(date: string): string {
+  return `${STORAGE_KEYS.WATER_PREFIX}${date}`;
+}
+
+export async function getWater(date: string): Promise<number> {
+  try {
+    const raw = await AsyncStorage.getItem(getWaterKey(date));
+    if (raw == null) return 0;
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? 0 : Math.max(0, n);
+  } catch (error) {
+    console.error('Error reading water:', error);
+    return 0;
+  }
+}
+
+export async function setWater(date: string, ml: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(getWaterKey(date), String(Math.max(0, Math.floor(ml))));
+  } catch (error) {
+    console.error('Error saving water:', error);
+    throw error;
+  }
 }
 
 // ============================================

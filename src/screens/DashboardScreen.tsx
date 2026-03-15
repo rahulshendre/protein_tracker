@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { format } from 'date-fns';
-import { FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING, GLASSES_ML } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
 import { ProgressBar, MealCard, ThemedDialog } from '../components';
@@ -29,11 +29,14 @@ export function DashboardScreen() {
   
   const { 
     todayLog, 
+    todayWater,
     settings, 
     syncStatus,
     setSyncStatus,
     loadSettings, 
-    loadTodayLog, 
+    loadTodayLog,
+    loadWater,
+    addWater,
     deleteMeal,
     getDailyStats,
   } = useMealStore();
@@ -51,18 +54,18 @@ export function DashboardScreen() {
     setRefreshing(true);
     setSyncStatus('syncing');
     try {
-      await Promise.all([loadSettings(), loadTodayLog()]);
+      await Promise.all([loadSettings(), loadTodayLog(), loadWater()]);
       if (useMealStore.getState().syncStatus !== 'offline') setSyncStatus('synced');
     } catch {
       setSyncStatus('offline');
     }
     setRefreshing(false);
-  }, [loadSettings, loadTodayLog, setSyncStatus]);
+  }, [loadSettings, loadTodayLog, loadWater, setSyncStatus]);
 
   useEffect(() => {
     let mounted = true;
     setSyncStatus('syncing');
-    Promise.all([loadSettings(), loadTodayLog()])
+    Promise.all([loadSettings(), loadTodayLog(), loadWater()])
       .then(() => {
         if (mounted) {
           const { syncStatus: s } = useMealStore.getState();
@@ -132,6 +135,26 @@ export function DashboardScreen() {
           consumed={stats.totalProtein}
           goal={settings.dailyProteinGoal}
         />
+      </View>
+
+      {/* Water Section */}
+      <View style={[styles.waterSection, { backgroundColor: colors.surface }]}>
+        <View style={styles.waterHeader}>
+          <Text style={[styles.waterTitle, { color: colors.text }]}>Water</Text>
+          <Text style={[styles.waterCount, { color: colors.textSecondary }]}>
+            {settings.waterUnit === 'glasses'
+              ? `${Math.round(todayWater / GLASSES_ML)} / ${Math.round(settings.dailyWaterGoalMl / GLASSES_ML)} glasses`
+              : `${todayWater} / ${settings.dailyWaterGoalMl} ml`}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.waterAddBtn, { backgroundColor: colors.primaryLight }]}
+          onPress={() => { mediumHaptic(); addWater(); }}
+        >
+          <Text style={[styles.waterAddText, { color: colors.primary }]}>
+            {settings.waterUnit === 'glasses' ? '+1 glass' : '+250 ml'}
+          </Text>
+        </TouchableOpacity>
       </View>
       
       {/* Meals Section */}
@@ -243,6 +266,35 @@ const styles = StyleSheet.create({
   },
   progressSection: {
     paddingVertical: SPACING.md,
+  },
+  waterSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    borderRadius: 12,
+    marginBottom: SPACING.md,
+  },
+  waterHeader: {
+    flex: 1,
+  },
+  waterTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+  },
+  waterCount: {
+    fontSize: FONT_SIZES.sm,
+    marginTop: 2,
+  },
+  waterAddBtn: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 10,
+  },
+  waterAddText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
   mealsSection: {
     flex: 1,

@@ -63,9 +63,14 @@ export const FONT_SIZES = {
   xxl: 32,
 };
 
+// 1 glass = 250 ml (standard)
+export const GLASSES_ML = 250;
+
 // Default settings for new users
 export const DEFAULTS = {
   dailyProteinGoal: 150,
+  dailyWaterGoalMl: 3000,  // 12 glasses
+  waterUnit: 'ml' as const,
   theme: 'light' as const,
   reminderEnabled: false,
   reminderTime: '20:00',
@@ -75,5 +80,6 @@ export const DEFAULTS = {
 export const STORAGE_KEYS = {
   SETTINGS: '@protein_tracker/settings',
   DAILY_LOG_PREFIX: '@protein_tracker/daily/',  // + YYYY-MM-DD
+  WATER_PREFIX: '@protein_tracker/water/',      // + YYYY-MM-DD
   HISTORY_INDEX: '@protein_tracker/history',
 };

@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING, GLASSES_ML } from '../constants';
 import { useMealStore } from '../stores/mealStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTheme } from '../context/ThemeContext';
@@ -32,9 +32,14 @@ function formatReminderTime(s: string): string {
 export function SettingsScreen() {
   const navigation = useNavigation();
   const { colors, isDark, toggleTheme } = useTheme();
-  const { settings, syncStatus, updateGoal, updateReminder } = useMealStore();
+  const { settings, syncStatus, updateGoal, updateWaterGoal, setWaterUnit, updateReminder } = useMealStore();
   const { signOut, user } = useAuthStore();
   const [goalInput, setGoalInput] = useState(settings.dailyProteinGoal.toString());
+  const [waterGoalInput, setWaterGoalInput] = useState(() =>
+    settings.waterUnit === 'glasses'
+      ? String(Math.round(settings.dailyWaterGoalMl / GLASSES_ML))
+      : String(settings.dailyWaterGoalMl)
+  );
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [customHour, setCustomHour] = useState(() => {
     const [h] = settings.reminderTime.split(':').map(Number);
@@ -46,6 +51,7 @@ export function SettingsScreen() {
   });
 
   const [errorDialog, setErrorDialog] = useState(false);
+  const [waterErrorDialog, setWaterErrorDialog] = useState(false);
   const [timeErrorDialog, setTimeErrorDialog] = useState(false);
   const [signOutDialog, setSignOutDialog] = useState(false);
 
@@ -57,13 +63,32 @@ export function SettingsScreen() {
     }
   }, [showTimePicker, settings.reminderTime]);
 
+  useEffect(() => {
+    setWaterGoalInput(
+      settings.waterUnit === 'glasses'
+        ? String(Math.round(settings.dailyWaterGoalMl / GLASSES_ML))
+        : String(settings.dailyWaterGoalMl)
+    );
+  }, [settings.waterUnit, settings.dailyWaterGoalMl]);
+
   const handleSave = async () => {
     const goal = parseInt(goalInput, 10);
     if (isNaN(goal) || goal < 1 || goal > 500) {
       setErrorDialog(true);
       return;
     }
+    const rawWater = parseInt(waterGoalInput, 10);
+    if (isNaN(rawWater)) {
+      setWaterErrorDialog(true);
+      return;
+    }
+    const goalMl = settings.waterUnit === 'glasses' ? rawWater * GLASSES_ML : rawWater;
+    if (goalMl < 250 || goalMl > 10000) {
+      setWaterErrorDialog(true);
+      return;
+    }
     await updateGoal(goal);
+    await updateWaterGoal(goalMl);
     navigation.goBack();
   };
 
@@ -93,6 +118,50 @@ export function SettingsScreen() {
 
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           Recommended: 0.8-1g per pound of body weight for muscle building
+        </Text>
+
+        {/* Water unit + goal */}
+        <View style={[styles.setting, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Water unit</Text>
+          <View style={styles.waterUnitRow}>
+            <TouchableOpacity
+              style={[
+                styles.waterUnitBtn,
+                settings.waterUnit === 'glasses' && { backgroundColor: colors.primaryLight },
+                { borderColor: colors.border },
+              ]}
+              onPress={() => setWaterUnit('glasses')}
+            >
+              <Text style={[styles.waterUnitBtnText, { color: settings.waterUnit === 'glasses' ? colors.primary : colors.textSecondary }]}>Glasses</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.waterUnitBtn,
+                settings.waterUnit === 'ml' && { backgroundColor: colors.primaryLight },
+                { borderColor: colors.border },
+              ]}
+              onPress={() => setWaterUnit('ml')}
+            >
+              <Text style={[styles.waterUnitBtnText, { color: settings.waterUnit === 'ml' ? colors.primary : colors.textSecondary }]}>ml</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={[styles.setting, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>
+            Daily Water Goal ({settings.waterUnit === 'glasses' ? 'glasses' : 'ml'})
+          </Text>
+          <TextInput
+            style={[styles.input, { color: colors.text }]}
+            value={waterGoalInput}
+            onChangeText={setWaterGoalInput}
+            keyboardType="number-pad"
+            maxLength={settings.waterUnit === 'ml' ? 5 : 2}
+            placeholderTextColor={colors.disabled}
+          />
+        </View>
+
+        <Text style={[styles.hint, { color: colors.textSecondary }]}>
+          {settings.waterUnit === 'glasses' ? 'Common: 8 glasses (~2L).' : 'Common: 2000 ml.'} Adjust to your needs.
         </Text>
 
         {/* Dark Mode Toggle */}
@@ -253,6 +322,13 @@ export function SettingsScreen() {
         onClose={() => setErrorDialog(false)}
       />
 
+      <ThemedDialog
+        visible={waterErrorDialog}
+        title="Invalid Water Goal"
+        message={settings.waterUnit === 'glasses' ? 'Enter 1–40 glasses.' : 'Enter 250–10000 ml.'}
+        onClose={() => setWaterErrorDialog(false)}
+      />
+
       {/* Sign Out Confirmation */}
       <ThemedDialog
         visible={signOutDialog}
@@ -301,6 +377,22 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
     padding: 0,
+  },
+  waterUnitRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  waterUnitBtn: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  waterUnitBtnText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
   hint: {
     fontSize: FONT_SIZES.sm,

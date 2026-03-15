@@ -12,7 +12,7 @@ import { DailyLog, DailyStats, Meal, MealType, UserSettings } from '../types';
 import * as storage from '../services/storage';
 import * as cloudData from '../services/supabaseData';
 import * as notifications from '../services/notifications';
-import { DEFAULTS } from '../constants';
+import { DEFAULTS, GLASSES_ML } from '../constants';
 import { useAuthStore } from './authStore';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline';
@@ -20,16 +20,21 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline';
 interface MealStore {
   settings: UserSettings;
   todayLog: DailyLog | null;
+  todayWater: number;
   isLoading: boolean;
   syncStatus: SyncStatus;
 
   setSyncStatus: (status: SyncStatus) => void;
   loadSettings: () => Promise<void>;
   updateGoal: (goal: number) => Promise<void>;
+  updateWaterGoal: (goalMl: number) => Promise<void>;
+  setWaterUnit: (unit: 'glasses' | 'ml') => Promise<void>;
   updateTheme: (theme: 'light' | 'dark') => Promise<void>;
   updateReminder: (enabled: boolean, time?: string) => Promise<void>;
 
   loadTodayLog: () => Promise<void>;
+  loadWater: () => Promise<void>;
+  addWater: () => Promise<void>;
   addMeal: (name: string, proteinGrams: number, mealType: MealType) => Promise<void>;
   updateMeal: (meal: Meal) => Promise<void>;
   deleteMeal: (mealId: string) => Promise<void>;
@@ -71,12 +76,15 @@ function getUserId(): string | null {
 export const useMealStore = create<MealStore>((set, get) => ({
   settings: {
     dailyProteinGoal: DEFAULTS.dailyProteinGoal,
+    dailyWaterGoalMl: DEFAULTS.dailyWaterGoalMl,
+    waterUnit: DEFAULTS.waterUnit,
     theme: DEFAULTS.theme,
     reminderEnabled: DEFAULTS.reminderEnabled,
     reminderTime: DEFAULTS.reminderTime,
     createdAt: new Date().toISOString(),
   },
   todayLog: null,
+  todayWater: 0,
   isLoading: true,
   syncStatus: 'idle',
 
@@ -114,6 +122,36 @@ export const useMealStore = create<MealStore>((set, get) => ({
       }
     } catch {
       __DEV__ && console.warn('Reminder schedule failed');
+    }
+  },
+
+  updateWaterGoal: async (goalMl: number) => {
+    const { settings } = get();
+    const newSettings = { ...settings, dailyWaterGoalMl: Math.max(0, Math.floor(goalMl)) };
+    await storage.saveSettings(newSettings);
+    set({ settings: newSettings });
+    const userId = getUserId();
+    if (userId) {
+      try {
+        await cloudData.saveCloudSettings(userId, newSettings);
+      } catch {
+        __DEV__ && console.warn('Sync water goal to cloud failed');
+      }
+    }
+  },
+
+  setWaterUnit: async (waterUnit: 'glasses' | 'ml') => {
+    const { settings } = get();
+    const newSettings = { ...settings, waterUnit };
+    await storage.saveSettings(newSettings);
+    set({ settings: newSettings });
+    const userId = getUserId();
+    if (userId) {
+      try {
+        await cloudData.saveCloudSettings(userId, newSettings);
+      } catch {
+        __DEV__ && console.warn('Sync water unit to cloud failed');
+      }
     }
   },
 
@@ -201,8 +239,42 @@ export const useMealStore = create<MealStore>((set, get) => ({
       };
       set({ todayLog: log });
       await storage.saveDailyLog(log);
-    } catch (error) {
+    } catch {
       __DEV__ && console.warn('Sync today log from cloud failed');
+    }
+  },
+
+  loadWater: async () => {
+    const today = getTodayDate();
+    const local = await storage.getWater(today);
+    set({ todayWater: local });
+
+    const userId = getUserId();
+    if (!userId) return;
+    try {
+      const cloud = await cloudData.getCloudWater(userId, today);
+      const merged = Math.max(local, cloud);
+      set({ todayWater: merged });
+      await storage.setWater(today, merged);
+    } catch {
+      __DEV__ && console.warn('Sync water from cloud failed');
+    }
+  },
+
+  addWater: async () => {
+    const today = getTodayDate();
+    const current = get().todayWater;
+    const next = current + GLASSES_ML;
+    set({ todayWater: next });
+    await storage.setWater(today, next);
+
+    const userId = getUserId();
+    if (userId) {
+      try {
+        await cloudData.saveCloudWater(userId, today, next);
+      } catch {
+        __DEV__ && console.warn('Sync water to cloud failed');
+      }
     }
   },
 

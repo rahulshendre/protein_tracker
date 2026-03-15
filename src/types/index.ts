@@ -25,9 +25,14 @@ export interface DailyLog {
   goalGrams: number;       // Protein goal for that day (snapshot)
 }
 
+// Water display/setting unit
+export type WaterUnit = 'glasses' | 'ml';
+
 // User preferences and settings
 export interface UserSettings {
   dailyProteinGoal: number;
+  dailyWaterGoalMl: number;   // daily goal in ml (stored canonically)
+  waterUnit: WaterUnit;       // how user sees water (glasses vs ml)
   theme: 'light' | 'dark';
   reminderEnabled: boolean;
   reminderTime: string;   // "HH:mm"

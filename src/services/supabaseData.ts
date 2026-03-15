@@ -17,6 +17,8 @@ export async function getCloudSettings(userId: string): Promise<UserSettings | n
 
   return {
     dailyProteinGoal: data.daily_protein_goal,
+    dailyWaterGoalMl: data.daily_water_goal_ml ?? DEFAULTS.dailyWaterGoalMl,
+    waterUnit: data.water_unit ?? DEFAULTS.waterUnit,
     theme: data.theme,
     reminderEnabled: data.reminder_enabled ?? DEFAULTS.reminderEnabled,
     reminderTime: data.reminder_time ?? DEFAULTS.reminderTime,
@@ -30,6 +32,8 @@ export async function saveCloudSettings(userId: string, settings: UserSettings):
     .upsert({
       id: userId,
       daily_protein_goal: settings.dailyProteinGoal,
+      daily_water_goal_ml: settings.dailyWaterGoalMl,
+      water_unit: settings.waterUnit,
       theme: settings.theme,
       reminder_enabled: settings.reminderEnabled,
       reminder_time: settings.reminderTime,
@@ -109,6 +113,39 @@ export async function deleteCloudMeal(mealId: string): Promise<void> {
 
   if (error) {
     if (__DEV__) console.warn('Delete cloud meal failed:', error.message);
+    throw error;
+  }
+}
+
+// ============================================
+// WATER
+// ============================================
+
+export async function getCloudWater(userId: string, date: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('water_logs')
+    .select('ml')
+    .eq('user_id', userId)
+    .eq('date', date)
+    .maybeSingle();
+
+  if (error) {
+    if (__DEV__) console.warn('Fetch cloud water failed:', error.message);
+    throw error;
+  }
+  return data?.ml ?? 0;
+}
+
+export async function saveCloudWater(userId: string, date: string, ml: number): Promise<void> {
+  const { error } = await supabase
+    .from('water_logs')
+    .upsert(
+      { user_id: userId, date, ml: Math.max(0, Math.floor(ml)) },
+      { onConflict: 'user_id,date' }
+    );
+
+  if (error) {
+    if (__DEV__) console.warn('Save cloud water failed:', error.message);
     throw error;
   }
 }
