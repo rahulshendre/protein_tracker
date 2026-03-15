@@ -116,6 +116,12 @@ export function DashboardScreen() {
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.headerButton, { backgroundColor: colors.surface }]} 
+            onPress={() => navigation.navigate('Physique')}
+          >
+            <Text style={styles.headerButtonText}>📷</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerButton, { backgroundColor: colors.surface }]} 
             onPress={() => navigation.navigate('History')}
           >
             <Text style={styles.headerButtonText}>📅</Text>

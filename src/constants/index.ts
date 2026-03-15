@@ -82,4 +82,5 @@ export const STORAGE_KEYS = {
   DAILY_LOG_PREFIX: '@protein_tracker/daily/',  // + YYYY-MM-DD
   WATER_PREFIX: '@protein_tracker/water/',      // + YYYY-MM-DD
   HISTORY_INDEX: '@protein_tracker/history',
+  PHYSIQUE_ENTRIES: '@protein_tracker/physique_entries',
 };

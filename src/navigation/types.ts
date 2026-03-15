@@ -4,7 +4,7 @@
  * Defines the navigation structure for type-safe navigation.
  */
 
-import { Meal } from '../types';
+import { Meal, PhysiqueEntry } from '../types';
 
 export type RootStackParamList = {
   // Auth screens
@@ -19,6 +19,9 @@ export type RootStackParamList = {
   DayDetail: { date: string };
   WeeklyStats: undefined;
   Settings: undefined;
+  Physique: undefined;
+  AddPhysique: undefined;
+  PhysiqueDetail: { entry: PhysiqueEntry };
 };
 
 declare global {

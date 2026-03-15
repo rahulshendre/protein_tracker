@@ -39,6 +39,15 @@ export interface UserSettings {
   createdAt: string;
 }
 
+// Physique / progress entry: photo + weight + notes
+export interface PhysiqueEntry {
+  id: string;
+  createdAt: string;   // ISO 8601
+  imageUri: string;    // local file path or content URI
+  weight: number;
+  notes: string;
+}
+
 // Computed stats for display (not stored, calculated on the fly)
 export interface DailyStats {
   totalProtein: number;      // Sum of all meal proteins
