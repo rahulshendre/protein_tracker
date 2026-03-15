@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { DailyLog, DailyStats, Meal, MealType, UserSettings } from '../types';
 import * as storage from '../services/storage';
 import * as cloudData from '../services/supabaseData';
@@ -21,6 +21,7 @@ interface MealStore {
   settings: UserSettings;
   todayLog: DailyLog | null;
   todayWater: number;
+  water7DayAvg: number;   // average ml per day over last 7 days
   isLoading: boolean;
   syncStatus: SyncStatus;
 
@@ -85,6 +86,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
   },
   todayLog: null,
   todayWater: 0,
+  water7DayAvg: 0,
   isLoading: true,
   syncStatus: 'idle',
 
@@ -248,15 +250,24 @@ export const useMealStore = create<MealStore>((set, get) => ({
     set({ todayWater: local });
 
     const userId = getUserId();
-    if (!userId) return;
-    try {
-      const cloud = await cloudData.getCloudWater(userId, today);
-      const merged = Math.max(local, cloud);
-      set({ todayWater: merged });
-      await storage.setWater(today, merged);
-    } catch {
-      __DEV__ && console.warn('Sync water from cloud failed');
+    if (userId) {
+      try {
+        const cloud = await cloudData.getCloudWater(userId, today);
+        const merged = Math.max(local, cloud);
+        set({ todayWater: merged });
+        await storage.setWater(today, merged);
+      } catch {
+        __DEV__ && console.warn('Sync water from cloud failed');
+      }
     }
+
+    // 7-day average (local storage only, minimal)
+    let total = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = format(subDays(new Date(), i), 'yyyy-MM-dd');
+      total += await storage.getWater(d);
+    }
+    set({ water7DayAvg: Math.round(total / 7) });
   },
 
   addWater: async () => {

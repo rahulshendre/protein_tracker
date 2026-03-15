@@ -30,6 +30,7 @@ export function DashboardScreen() {
   const { 
     todayLog, 
     todayWater,
+    water7DayAvg,
     settings, 
     syncStatus,
     setSyncStatus,
@@ -145,6 +146,11 @@ export function DashboardScreen() {
             {settings.waterUnit === 'glasses'
               ? `${Math.round(todayWater / GLASSES_ML)} / ${Math.round(settings.dailyWaterGoalMl / GLASSES_ML)} glasses`
               : `${todayWater} / ${settings.dailyWaterGoalMl} ml`}
+          </Text>
+          <Text style={[styles.water7DayAvg, { color: colors.textSecondary }]}>
+            7-day avg: {settings.waterUnit === 'glasses'
+              ? `${Math.round(water7DayAvg / GLASSES_ML)} glasses`
+              : `${water7DayAvg} ml`}
           </Text>
         </View>
         <TouchableOpacity
@@ -285,6 +291,10 @@ const styles = StyleSheet.create({
   },
   waterCount: {
     fontSize: FONT_SIZES.sm,
+    marginTop: 2,
+  },
+  water7DayAvg: {
+    fontSize: FONT_SIZES.xs,
     marginTop: 2,
   },
   waterAddBtn: {
