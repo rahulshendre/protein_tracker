@@ -35,7 +35,7 @@ export interface UserSettings {
   waterUnit: WaterUnit;       // how user sees water (glasses vs ml)
   theme: 'light' | 'dark';
   reminderEnabled: boolean;
-  reminderTime: string;   // "HH:mm"
+  reminderTimes: [string, string, string];   // 3x "HH:mm" per day
   createdAt: string;
 }
 

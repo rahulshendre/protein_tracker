@@ -1,12 +1,14 @@
 /**
- * Android local notifications – daily "Log your protein" reminder (Notifee).
+ * Android local notifications – 3x daily "Yoo buddy! Add your protein and water" (Notifee).
  */
 
 import { Platform, PermissionsAndroid } from 'react-native';
 import notifee, { AndroidImportance, RepeatFrequency, TriggerType } from '@notifee/react-native';
 
 const CHANNEL_ID = 'protein_reminder';
-const NOTIFICATION_ID = 'daily_protein_reminder';
+const NOTIFICATION_IDS = ['daily_reminder_1', 'daily_reminder_2', 'daily_reminder_3'] as const;
+const TITLE = 'Protein & Water';
+const BODY = 'Yoo buddy! Add your protein and water.';
 const POST_NOTIFICATIONS = 'android.permission.POST_NOTIFICATIONS';
 
 async function requestPermission(): Promise<boolean> {
@@ -19,39 +21,46 @@ async function requestPermission(): Promise<boolean> {
   }
 }
 
-export async function scheduleDailyReminder(hour: number, minute: number): Promise<void> {
+export async function scheduleDailyReminders(times: [string, string, string]): Promise<void> {
   if (Platform.OS !== 'android') return;
   const granted = await requestPermission();
   if (!granted) return;
 
   await notifee.createChannel({
     id: CHANNEL_ID,
-    name: 'Log your protein',
+    name: TITLE,
     importance: AndroidImportance.DEFAULT,
   });
 
-  await notifee.cancelTriggerNotification(NOTIFICATION_ID);
+  for (const id of NOTIFICATION_IDS) {
+    await notifee.cancelTriggerNotification(id);
+  }
 
-  const d = new Date();
-  d.setHours(hour, minute, 0, 0);
-  if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 3; i++) {
+    const [h, m] = times[i].split(':').map(Number);
+    const d = new Date();
+    d.setHours(h ?? 8, m ?? 0, 0, 0);
+    if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
 
-  await notifee.createTriggerNotification(
-    {
-      id: NOTIFICATION_ID,
-      title: 'Log your protein',
-      body: 'Time to log your protein for today.',
-      android: { channelId: CHANNEL_ID },
-    },
-    {
-      type: TriggerType.TIMESTAMP,
-      timestamp: d.getTime(),
-      repeatFrequency: RepeatFrequency.DAILY,
-    }
-  );
+    await notifee.createTriggerNotification(
+      {
+        id: NOTIFICATION_IDS[i],
+        title: TITLE,
+        body: BODY,
+        android: { channelId: CHANNEL_ID },
+      },
+      {
+        type: TriggerType.TIMESTAMP,
+        timestamp: d.getTime(),
+        repeatFrequency: RepeatFrequency.DAILY,
+      }
+    );
+  }
 }
 
 export async function cancelDailyReminder(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await notifee.cancelTriggerNotification(NOTIFICATION_ID);
+  for (const id of NOTIFICATION_IDS) {
+    await notifee.cancelTriggerNotification(id);
+  }
 }

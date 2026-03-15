@@ -28,7 +28,9 @@ export async function getSettings(): Promise<UserSettings> {
       waterUnit: parsed?.waterUnit ?? DEFAULTS.waterUnit,
       theme: parsed?.theme ?? DEFAULTS.theme,
       reminderEnabled: parsed?.reminderEnabled ?? DEFAULTS.reminderEnabled,
-      reminderTime: parsed?.reminderTime ?? DEFAULTS.reminderTime,
+      reminderTimes: (parsed?.reminderTimes && Array.isArray(parsed.reminderTimes) && parsed.reminderTimes.length === 3)
+        ? parsed.reminderTimes
+        : (parsed?.reminderTime != null ? [parsed.reminderTime, DEFAULTS.reminderTimes[1], DEFAULTS.reminderTimes[2]] : DEFAULTS.reminderTimes),
       createdAt: parsed?.createdAt ?? new Date().toISOString(),
     };
   } catch (error) {

@@ -41,14 +41,10 @@ export function SettingsScreen() {
       : String(settings.dailyWaterGoalMl)
   );
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [customHour, setCustomHour] = useState(() => {
-    const [h] = settings.reminderTime.split(':').map(Number);
-    return String(h ?? 20);
-  });
-  const [customMinute, setCustomMinute] = useState(() => {
-    const [, m] = settings.reminderTime.split(':').map(Number);
-    return String(m ?? 0).padStart(2, '0');
-  });
+  const [modalTimes, setModalTimes] = useState<[string, string, string]>(() => settings.reminderTimes);
+  const [editingSlot, setEditingSlot] = useState<0 | 1 | 2 | null>(null);
+  const [customHour, setCustomHour] = useState('8');
+  const [customMinute, setCustomMinute] = useState('00');
 
   const [errorDialog, setErrorDialog] = useState(false);
   const [waterErrorDialog, setWaterErrorDialog] = useState(false);
@@ -57,11 +53,14 @@ export function SettingsScreen() {
 
   useEffect(() => {
     if (showTimePicker) {
-      const [h, m] = settings.reminderTime.split(':').map(Number);
-      setCustomHour(String(h ?? 20));
-      setCustomMinute(String(m ?? 0).padStart(2, '0'));
+      setModalTimes(settings.reminderTimes);
+      setEditingSlot(null);
     }
-  }, [showTimePicker, settings.reminderTime]);
+  }, [showTimePicker, settings.reminderTimes]);
+
+  function formatReminderTimes(times: [string, string, string]): string {
+    return times.map(formatReminderTime).join(', ');
+  }
 
   useEffect(() => {
     setWaterGoalInput(
@@ -180,7 +179,7 @@ export function SettingsScreen() {
           />
         </View>
 
-        {/* Daily reminder (Android) */}
+        {/* Reminders – 3x daily (Android) */}
         {Platform.OS === 'android' && (
           <View style={[styles.setting, styles.toggleSetting, { backgroundColor: colors.surface }]}>
             <TouchableOpacity
@@ -188,9 +187,9 @@ export function SettingsScreen() {
               onPress={() => settings.reminderEnabled && setShowTimePicker(true)}
               disabled={!settings.reminderEnabled}
             >
-              <Text style={[styles.toggleLabel, { color: colors.text }]}>Daily reminder</Text>
+              <Text style={[styles.toggleLabel, { color: colors.text }]}>Reminders</Text>
               <Text style={[styles.toggleHint, { color: colors.textSecondary }]}>
-                {settings.reminderEnabled ? `Log your protein at ${formatReminderTime(settings.reminderTime)}` : 'Off'}
+                {settings.reminderEnabled ? `3x daily: ${formatReminderTimes(settings.reminderTimes)}` : 'Off'}
               </Text>
             </TouchableOpacity>
             <Switch
@@ -208,73 +207,109 @@ export function SettingsScreen() {
           <Modal visible={showTimePicker} transparent animationType="fade">
             <Pressable style={styles.timePickerOverlay} onPress={() => setShowTimePicker(false)}>
               <Pressable style={[styles.timePickerBox, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
-                <Text style={[styles.timePickerTitle, { color: colors.text }]}>Reminder time</Text>
-                <View style={styles.customTimeRow}>
-                  <View style={styles.customTimeField}>
-                    <Text style={[styles.customTimeLabel, { color: colors.textSecondary }]}>Hour</Text>
-                    <TextInput
-                      style={[styles.customTimeInput, { color: colors.text, borderColor: colors.border }]}
-                      value={customHour}
-                      onChangeText={setCustomHour}
-                      keyboardType="number-pad"
-                      maxLength={2}
-                      placeholder="20"
-                      placeholderTextColor={colors.disabled}
-                    />
-                  </View>
-                  <Text style={[styles.customTimeColon, { color: colors.text }]}>:</Text>
-                  <View style={styles.customTimeField}>
-                    <Text style={[styles.customTimeLabel, { color: colors.textSecondary }]}>Min</Text>
-                    <TextInput
-                      style={[styles.customTimeInput, { color: colors.text, borderColor: colors.border }]}
-                      value={customMinute}
-                      onChangeText={(t) => setCustomMinute(t.replace(/\D/g, '').slice(0, 2))}
-                      keyboardType="number-pad"
-                      maxLength={2}
-                      placeholder="00"
-                      placeholderTextColor={colors.disabled}
-                    />
-                  </View>
+                <Text style={[styles.timePickerTitle, { color: colors.text }]}>Reminder times (3 per day)</Text>
+                {([0, 1, 2] as const).map((i) => (
                   <TouchableOpacity
-                    style={[styles.customTimeSetBtn, { backgroundColor: colors.primary }]}
+                    key={i}
+                    style={[styles.reminderSlotRow, editingSlot === i && { backgroundColor: colors.primaryLight }]}
                     onPress={() => {
-                      const h = parseInt(customHour, 10);
-                      const m = parseInt(customMinute, 10);
-                      if (isNaN(h) || h < 0 || h > 23 || isNaN(m) || m < 0 || m > 59) {
-                        setTimeErrorDialog(true);
-                        return;
-                      }
-                      const time = `${h}:${String(m).padStart(2, '0')}`;
-                      updateReminder(true, time);
+                      setEditingSlot(editingSlot === i ? null : i);
+                      const [h, m] = modalTimes[i].split(':').map(Number);
+                      setCustomHour(String(h ?? 8));
+                      setCustomMinute(String(m ?? 0).padStart(2, '0'));
+                    }}
+                  >
+                    <Text style={[styles.reminderSlotLabel, { color: colors.textSecondary }]}>Reminder {i + 1}</Text>
+                    <Text style={[styles.reminderSlotTime, { color: colors.text }]}>{formatReminderTime(modalTimes[i])}</Text>
+                  </TouchableOpacity>
+                ))}
+                {editingSlot !== null && (
+                  <>
+                    <View style={styles.customTimeRow}>
+                      <View style={styles.customTimeField}>
+                        <Text style={[styles.customTimeLabel, { color: colors.textSecondary }]}>Hour</Text>
+                        <TextInput
+                          style={[styles.customTimeInput, { color: colors.text, borderColor: colors.border }]}
+                          value={customHour}
+                          onChangeText={setCustomHour}
+                          keyboardType="number-pad"
+                          maxLength={2}
+                          placeholder="8"
+                          placeholderTextColor={colors.disabled}
+                        />
+                      </View>
+                      <Text style={[styles.customTimeColon, { color: colors.text }]}>:</Text>
+                      <View style={styles.customTimeField}>
+                        <Text style={[styles.customTimeLabel, { color: colors.textSecondary }]}>Min</Text>
+                        <TextInput
+                          style={[styles.customTimeInput, { color: colors.text, borderColor: colors.border }]}
+                          value={customMinute}
+                          onChangeText={(t) => setCustomMinute(t.replace(/\D/g, '').slice(0, 2))}
+                          keyboardType="number-pad"
+                          maxLength={2}
+                          placeholder="00"
+                          placeholderTextColor={colors.disabled}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.customTimeSetBtn, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          const h = parseInt(customHour, 10);
+                          const m = parseInt(customMinute, 10);
+                          if (isNaN(h) || h < 0 || h > 23 || isNaN(m) || m < 0 || m > 59) {
+                            setTimeErrorDialog(true);
+                            return;
+                          }
+                          const time = `${h}:${String(m).padStart(2, '0')}`;
+                          setModalTimes((prev) => {
+                            const next: [string, string, string] = [...prev];
+                            next[editingSlot] = time;
+                            return next;
+                          });
+                          setEditingSlot(null);
+                        }}
+                      >
+                        <Text style={styles.customTimeSetText}>Set</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.timePickerPresetLabel, { color: colors.textSecondary }]}>Or pick a preset</Text>
+                    <ScrollView style={styles.timePickerList}>
+                      {REMINDER_PRESET_HOURS.map((h) => {
+                        const time = `${h}:00`;
+                        return (
+                          <TouchableOpacity
+                            key={time}
+                            style={[styles.timePickerRow, modalTimes[editingSlot!] === time && { backgroundColor: colors.primaryLight }]}
+                            onPress={() => {
+                              setModalTimes((prev) => {
+                                const next: [string, string, string] = [...prev];
+                                next[editingSlot!] = time;
+                                return next;
+                              });
+                              setEditingSlot(null);
+                            }}
+                          >
+                            <Text style={[styles.timePickerRowText, { color: colors.text }]}>{formatReminderTime(time)}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                )}
+                <View style={styles.timePickerActions}>
+                  <TouchableOpacity style={[styles.timePickerCancel, { borderColor: colors.border }]} onPress={() => setShowTimePicker(false)}>
+                    <Text style={[styles.timePickerCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.timePickerSave, { backgroundColor: colors.primary }]}
+                    onPress={() => {
+                      updateReminder(true, modalTimes);
                       setShowTimePicker(false);
                     }}
                   >
-                    <Text style={styles.customTimeSetText}>Set</Text>
+                    <Text style={styles.customTimeSetText}>Save</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={[styles.timePickerPresetLabel, { color: colors.textSecondary }]}>Or pick a preset</Text>
-                <ScrollView style={styles.timePickerList}>
-                  {REMINDER_PRESET_HOURS.map((h) => {
-                    const time = `${h}:00`;
-                    return (
-                      <TouchableOpacity
-                        key={time}
-                        style={[styles.timePickerRow, settings.reminderTime === time && { backgroundColor: colors.primaryLight }]}
-                        onPress={() => {
-                          updateReminder(true, time);
-                          setCustomHour(String(h));
-                          setCustomMinute('00');
-                          setShowTimePicker(false);
-                        }}
-                      >
-                        <Text style={[styles.timePickerRowText, { color: colors.text }]}>{formatReminderTime(time)}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-                <TouchableOpacity style={[styles.timePickerCancel, { borderColor: colors.border }]} onPress={() => setShowTimePicker(false)}>
-                  <Text style={[styles.timePickerCancelText, { color: colors.textSecondary }]}>Cancel</Text>
-                </TouchableOpacity>
               </Pressable>
             </Pressable>
           </Modal>
@@ -450,7 +485,23 @@ const styles = StyleSheet.create({
   timePickerBox: {
     borderRadius: 12,
     padding: SPACING.md,
-    maxHeight: 320,
+    maxHeight: 420,
+  },
+  reminderSlotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: 8,
+    marginBottom: SPACING.xs,
+  },
+  reminderSlotLabel: {
+    fontSize: FONT_SIZES.sm,
+  },
+  reminderSlotTime: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
   timePickerTitle: {
     fontSize: FONT_SIZES.lg,
@@ -508,11 +559,24 @@ const styles = StyleSheet.create({
   timePickerRowText: {
     fontSize: FONT_SIZES.md,
   },
-  timePickerCancel: {
+  timePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.sm,
     marginTop: SPACING.md,
+  },
+  timePickerSave: {
+    paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
+    borderRadius: 8,
+  },
+  timePickerCancel: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     alignItems: 'center',
-    borderTopWidth: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    minWidth: 80,
   },
   timePickerCancelText: {
     fontSize: FONT_SIZES.md,

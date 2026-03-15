@@ -2,6 +2,18 @@ import { supabase } from './supabase';
 import { Meal, DailyLog, UserSettings } from '../types';
 import { DEFAULTS } from '../constants';
 
+function parseReminderTimes(json: unknown, legacyTime?: string): [string, string, string] {
+  if (json && typeof json === 'string') {
+    try {
+      const arr = JSON.parse(json);
+      if (Array.isArray(arr) && arr.length === 3 && arr.every((x) => typeof x === 'string')) return arr as [string, string, string];
+    } catch { /* ignore */ }
+  }
+  if (Array.isArray(json) && json.length === 3 && json.every((x) => typeof x === 'string')) return json as [string, string, string];
+  if (legacyTime) return [legacyTime, DEFAULTS.reminderTimes[1], DEFAULTS.reminderTimes[2]];
+  return DEFAULTS.reminderTimes;
+}
+
 // ============================================
 // USER SETTINGS
 // ============================================
@@ -21,7 +33,7 @@ export async function getCloudSettings(userId: string): Promise<UserSettings | n
     waterUnit: data.water_unit ?? DEFAULTS.waterUnit,
     theme: data.theme,
     reminderEnabled: data.reminder_enabled ?? DEFAULTS.reminderEnabled,
-    reminderTime: data.reminder_time ?? DEFAULTS.reminderTime,
+    reminderTimes: parseReminderTimes(data.reminder_times, data.reminder_time),
     createdAt: data.created_at,
   };
 }
@@ -36,7 +48,7 @@ export async function saveCloudSettings(userId: string, settings: UserSettings):
       water_unit: settings.waterUnit,
       theme: settings.theme,
       reminder_enabled: settings.reminderEnabled,
-      reminder_time: settings.reminderTime,
+      reminder_times: JSON.stringify(settings.reminderTimes),
       created_at: settings.createdAt,
     });
 

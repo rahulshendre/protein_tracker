@@ -73,7 +73,7 @@ export const DEFAULTS = {
   waterUnit: 'ml' as const,
   theme: 'light' as const,
   reminderEnabled: false,
-  reminderTime: '20:00',
+  reminderTimes: ['08:00', '13:00', '20:00'] as [string, string, string],
 };
 
 // Storage keys for AsyncStorage

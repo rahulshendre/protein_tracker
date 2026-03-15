@@ -30,7 +30,7 @@ interface MealStore {
   updateWaterGoal: (goalMl: number) => Promise<void>;
   setWaterUnit: (unit: 'glasses' | 'ml') => Promise<void>;
   updateTheme: (theme: 'light' | 'dark') => Promise<void>;
-  updateReminder: (enabled: boolean, time?: string) => Promise<void>;
+  updateReminder: (enabled: boolean, times?: [string, string, string]) => Promise<void>;
 
   loadTodayLog: () => Promise<void>;
   loadWater: () => Promise<void>;
@@ -80,7 +80,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
     waterUnit: DEFAULTS.waterUnit,
     theme: DEFAULTS.theme,
     reminderEnabled: DEFAULTS.reminderEnabled,
-    reminderTime: DEFAULTS.reminderTime,
+    reminderTimes: DEFAULTS.reminderTimes,
     createdAt: new Date().toISOString(),
   },
   todayLog: null,
@@ -115,8 +115,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
     const s = get().settings;
     try {
       if (s.reminderEnabled) {
-        const [h, m] = s.reminderTime.split(':').map(Number);
-        await notifications.scheduleDailyReminder(h, m);
+        await notifications.scheduleDailyReminders(s.reminderTimes);
       } else {
         await notifications.cancelDailyReminder();
       }
@@ -175,18 +174,17 @@ export const useMealStore = create<MealStore>((set, get) => ({
     }
   },
 
-  updateReminder: async (enabled: boolean, time?: string) => {
+  updateReminder: async (enabled: boolean, times?: [string, string, string]) => {
     const { settings } = get();
     const newSettings = {
       ...settings,
       reminderEnabled: enabled,
-      reminderTime: time ?? settings.reminderTime,
+      reminderTimes: times ?? settings.reminderTimes,
     };
     await storage.saveSettings(newSettings);
     set({ settings: newSettings });
     if (enabled) {
-      const [h, m] = newSettings.reminderTime.split(':').map(Number);
-      await notifications.scheduleDailyReminder(h, m);
+      await notifications.scheduleDailyReminders(newSettings.reminderTimes);
     } else {
       await notifications.cancelDailyReminder();
     }
