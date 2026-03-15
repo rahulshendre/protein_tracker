@@ -11,17 +11,23 @@ import { format } from 'date-fns';
 import { DailyLog, DailyStats, Meal, MealType, UserSettings } from '../types';
 import * as storage from '../services/storage';
 import * as cloudData from '../services/supabaseData';
+import * as notifications from '../services/notifications';
 import { DEFAULTS } from '../constants';
 import { useAuthStore } from './authStore';
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline';
 
 interface MealStore {
   settings: UserSettings;
   todayLog: DailyLog | null;
   isLoading: boolean;
+  syncStatus: SyncStatus;
 
+  setSyncStatus: (status: SyncStatus) => void;
   loadSettings: () => Promise<void>;
   updateGoal: (goal: number) => Promise<void>;
   updateTheme: (theme: 'light' | 'dark') => Promise<void>;
+  updateReminder: (enabled: boolean, time?: string) => Promise<void>;
 
   loadTodayLog: () => Promise<void>;
   addMeal: (name: string, proteinGrams: number, mealType: MealType) => Promise<void>;
@@ -66,10 +72,15 @@ export const useMealStore = create<MealStore>((set, get) => ({
   settings: {
     dailyProteinGoal: DEFAULTS.dailyProteinGoal,
     theme: DEFAULTS.theme,
+    reminderEnabled: DEFAULTS.reminderEnabled,
+    reminderTime: DEFAULTS.reminderTime,
     createdAt: new Date().toISOString(),
   },
   todayLog: null,
   isLoading: true,
+  syncStatus: 'idle',
+
+  setSyncStatus: (status) => set({ syncStatus: status }),
 
   // Load settings (local + cloud sync)
   loadSettings: async () => {
@@ -83,12 +94,19 @@ export const useMealStore = create<MealStore>((set, get) => ({
       if (userId) {
         const cloudSettings = await cloudData.getCloudSettings(userId);
         if (cloudSettings) {
-          set({ settings: cloudSettings });
-          await storage.saveSettings(cloudSettings);
+          const merged = { ...localSettings, ...cloudSettings };
+          set({ settings: merged });
+          await storage.saveSettings(merged);
         } else {
-          // First time - save local settings to cloud
           await cloudData.saveCloudSettings(userId, localSettings);
         }
+      }
+      const s = get().settings;
+      if (s.reminderEnabled) {
+        const [h, m] = s.reminderTime.split(':').map(Number);
+        await notifications.scheduleDailyReminder(h, m);
+      } else {
+        await notifications.cancelDailyReminder();
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -115,7 +133,31 @@ export const useMealStore = create<MealStore>((set, get) => ({
     }
   },
 
-  // Update theme
+  updateReminder: async (enabled: boolean, time?: string) => {
+    const { settings } = get();
+    const newSettings = {
+      ...settings,
+      reminderEnabled: enabled,
+      reminderTime: time ?? settings.reminderTime,
+    };
+    await storage.saveSettings(newSettings);
+    set({ settings: newSettings });
+    if (enabled) {
+      const [h, m] = newSettings.reminderTime.split(':').map(Number);
+      await notifications.scheduleDailyReminder(h, m);
+    } else {
+      await notifications.cancelDailyReminder();
+    }
+    const userId = getUserId();
+    if (userId) {
+      try {
+        await cloudData.saveCloudSettings(userId, newSettings);
+      } catch (e) {
+        console.error('Failed to sync reminder to cloud:', e);
+      }
+    }
+  },
+
   updateTheme: async (theme: 'light' | 'dark') => {
     const { settings } = get();
     const newSettings = { ...settings, theme };

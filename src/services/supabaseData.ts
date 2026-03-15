@@ -18,6 +18,8 @@ export async function getCloudSettings(userId: string): Promise<UserSettings | n
   return {
     dailyProteinGoal: data.daily_protein_goal,
     theme: data.theme,
+    reminderEnabled: data.reminder_enabled ?? DEFAULTS.reminderEnabled,
+    reminderTime: data.reminder_time ?? DEFAULTS.reminderTime,
     createdAt: data.created_at,
   };
 }
@@ -29,6 +31,8 @@ export async function saveCloudSettings(userId: string, settings: UserSettings):
       id: userId,
       daily_protein_goal: settings.dailyProteinGoal,
       theme: settings.theme,
+      reminder_enabled: settings.reminderEnabled,
+      reminder_time: settings.reminderTime,
       created_at: settings.createdAt,
     });
 

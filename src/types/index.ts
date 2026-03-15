@@ -27,9 +27,11 @@ export interface DailyLog {
 
 // User preferences and settings
 export interface UserSettings {
-  dailyProteinGoal: number;  // Default daily goal in grams
-  theme: 'light' | 'dark';   // UI theme preference
-  createdAt: string;         // When user first opened app
+  dailyProteinGoal: number;
+  theme: 'light' | 'dark';
+  reminderEnabled: boolean;
+  reminderTime: string;   // "HH:mm"
+  createdAt: string;
 }
 
 // Computed stats for display (not stored, calculated on the fly)

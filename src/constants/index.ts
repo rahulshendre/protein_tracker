@@ -65,8 +65,10 @@ export const FONT_SIZES = {
 
 // Default settings for new users
 export const DEFAULTS = {
-  dailyProteinGoal: 150,  // 150g is common fitness goal
+  dailyProteinGoal: 150,
   theme: 'light' as const,
+  reminderEnabled: false,
+  reminderTime: '20:00',
 };
 
 // Storage keys for AsyncStorage

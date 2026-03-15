@@ -21,14 +21,13 @@ import { DailyLog, Meal, UserSettings } from '../types';
 export async function getSettings(): Promise<UserSettings> {
   try {
     const json = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (json) {
-      return JSON.parse(json);
-    }
-    // Return defaults if no settings exist yet
+    const parsed = json ? JSON.parse(json) : null;
     return {
-      dailyProteinGoal: DEFAULTS.dailyProteinGoal,
-      theme: DEFAULTS.theme,
-      createdAt: new Date().toISOString(),
+      dailyProteinGoal: parsed?.dailyProteinGoal ?? DEFAULTS.dailyProteinGoal,
+      theme: parsed?.theme ?? DEFAULTS.theme,
+      reminderEnabled: parsed?.reminderEnabled ?? DEFAULTS.reminderEnabled,
+      reminderTime: parsed?.reminderTime ?? DEFAULTS.reminderTime,
+      createdAt: parsed?.createdAt ?? new Date().toISOString(),
     };
   } catch (error) {
     console.error('Error reading settings:', error);

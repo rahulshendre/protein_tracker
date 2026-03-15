@@ -30,6 +30,8 @@ export function DashboardScreen() {
   const { 
     todayLog, 
     settings, 
+    syncStatus,
+    setSyncStatus,
     loadSettings, 
     loadTodayLog, 
     deleteMeal,
@@ -47,12 +49,23 @@ export function DashboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadSettings(), loadTodayLog()]);
+    setSyncStatus('syncing');
+    try {
+      await Promise.all([loadSettings(), loadTodayLog()]);
+      setSyncStatus('synced');
+    } catch {
+      setSyncStatus('offline');
+    }
     setRefreshing(false);
-  }, []);
+  }, [loadSettings, loadTodayLog, setSyncStatus]);
 
   useEffect(() => {
-    Promise.all([loadSettings(), loadTodayLog()]);
+    let mounted = true;
+    setSyncStatus('syncing');
+    Promise.all([loadSettings(), loadTodayLog()])
+      .then(() => { if (mounted) setSyncStatus('synced'); })
+      .catch(() => { if (mounted) setSyncStatus('offline'); });
+    return () => { mounted = false; };
   }, []);
   
   const handleAddMeal = () => {
@@ -84,7 +97,12 @@ export function DashboardScreen() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.text }]}>Today's Progress</Text>
-          <Text style={[styles.date, { color: colors.textSecondary }]}>{todayFormatted}</Text>
+          <View style={styles.dateRow}>
+            <Text style={[styles.date, { color: colors.textSecondary }]}>{todayFormatted}</Text>
+            <Text style={[styles.syncBadge, { color: syncStatus === 'synced' ? colors.success : syncStatus === 'offline' ? colors.warning : colors.textSecondary }]}>
+              {syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'synced' ? 'Synced' : syncStatus === 'offline' ? 'Offline' : ''}
+            </Text>
+          </View>
         </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
@@ -206,9 +224,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
   },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+    gap: SPACING.sm,
+  },
   date: {
     fontSize: FONT_SIZES.md,
-    marginTop: SPACING.xs,
+  },
+  syncBadge: {
+    fontSize: FONT_SIZES.sm,
   },
   progressSection: {
     paddingVertical: SPACING.md,
