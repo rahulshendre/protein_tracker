@@ -110,6 +110,40 @@ export async function deleteCloudMeal(mealId: string): Promise<void> {
 }
 
 // ============================================
+// WEEK (single round-trip)
+// ============================================
+
+/** Fetches all meals for a date range in one query. Returns meals with date for grouping. */
+export async function getCloudMealsForDateRange(
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<Array<Meal & { date: string }>> {
+  const { data, error } = await supabase
+    .from('meals')
+    .select('id, name, protein_grams, meal_type, timestamp, date')
+    .eq('user_id', userId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: true })
+    .order('timestamp', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching week meals:', error);
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    proteinGrams: row.protein_grams,
+    mealType: row.meal_type,
+    timestamp: row.timestamp,
+    date: row.date,
+  }));
+}
+
+// ============================================
 // HISTORY
 // ============================================
 

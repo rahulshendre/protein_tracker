@@ -133,38 +133,30 @@ export const useMealStore = create<MealStore>((set, get) => ({
     }
   },
 
-  // Load today's meals
+  // Load today's meals (local-first: show local immediately, then sync from cloud)
   loadTodayLog: async () => {
-    set({ isLoading: true });
+    const today = getTodayDate();
+    const userId = getUserId();
+
+    // 1. Load from local first for instant UI
+    const localLog = await storage.getDailyLog(today);
+    set({ todayLog: localLog, isLoading: false });
+
+    if (!userId) return;
+
+    // 2. Fetch from cloud in background and overwrite when ready
     try {
-      const today = getTodayDate();
-      const userId = getUserId();
-
-      if (userId) {
-        // Try cloud first
-        const cloudMeals = await cloudData.getCloudMeals(userId, today);
-        if (cloudMeals.length > 0) {
-          const { settings } = get();
-          const log: DailyLog = {
-            date: today,
-            meals: cloudMeals,
-            goalGrams: settings.dailyProteinGoal,
-          };
-          set({ todayLog: log, isLoading: false });
-          // Save to local for offline access
-          await storage.saveDailyLog(log);
-          return;
-        }
-      }
-
-      // Fallback to local
-      const localLog = await storage.getDailyLog(today);
-      set({ todayLog: localLog, isLoading: false });
+      const cloudMeals = await cloudData.getCloudMeals(userId, today);
+      const { settings } = get();
+      const log: DailyLog = {
+        date: today,
+        meals: cloudMeals,
+        goalGrams: settings.dailyProteinGoal,
+      };
+      set({ todayLog: log });
+      await storage.saveDailyLog(log);
     } catch (error) {
-      console.error('Failed to load today log:', error);
-      // Fallback to local on error
-      const localLog = await storage.getDailyLog(getTodayDate());
-      set({ todayLog: localLog, isLoading: false });
+      console.error('Failed to sync today log from cloud:', error);
     }
   },
 

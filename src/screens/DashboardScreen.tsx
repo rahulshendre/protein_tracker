@@ -52,8 +52,7 @@ export function DashboardScreen() {
   }, []);
 
   useEffect(() => {
-    loadSettings();
-    loadTodayLog();
+    Promise.all([loadSettings(), loadTodayLog()]);
   }, []);
   
   const handleAddMeal = () => {
