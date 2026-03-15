@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
-import { ProgressBar, MealCard, ThemedDialog, SwipeableRow } from '../components';
+import { ProgressBar, MealCard, ThemedDialog } from '../components';
 import { RootStackParamList } from '../navigation/types';
 import { Meal } from '../types';
 import { mediumHaptic } from '../utils/haptics';
@@ -124,9 +124,7 @@ export function DashboardScreen() {
             data={todayLog.meals}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <SwipeableRow onDelete={() => handleDeleteMeal(item.id)}>
-                <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
-              </SwipeableRow>
+              <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
             )}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.mealsList}
