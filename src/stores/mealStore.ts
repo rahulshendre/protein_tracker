@@ -84,14 +84,12 @@ export const useMealStore = create<MealStore>((set, get) => ({
 
   // Load settings (local + cloud sync)
   loadSettings: async () => {
-    try {
-      // Load from local first
-      const localSettings = await storage.getSettings();
-      set({ settings: localSettings });
+    const localSettings = await storage.getSettings();
+    set({ settings: localSettings });
 
-      // Sync from cloud if logged in
-      const userId = getUserId();
-      if (userId) {
+    const userId = getUserId();
+    if (userId) {
+      try {
         const cloudSettings = await cloudData.getCloudSettings(userId);
         if (cloudSettings) {
           const merged = { ...localSettings, ...cloudSettings };
@@ -100,16 +98,22 @@ export const useMealStore = create<MealStore>((set, get) => ({
         } else {
           await cloudData.saveCloudSettings(userId, localSettings);
         }
+      } catch {
+        get().setSyncStatus('offline');
+        __DEV__ && console.warn('Cloud sync failed, using local data');
       }
-      const s = get().settings;
+    }
+
+    const s = get().settings;
+    try {
       if (s.reminderEnabled) {
         const [h, m] = s.reminderTime.split(':').map(Number);
         await notifications.scheduleDailyReminder(h, m);
       } else {
         await notifications.cancelDailyReminder();
       }
-    } catch (error) {
-      console.error('Failed to load settings:', error);
+    } catch {
+      __DEV__ && console.warn('Reminder schedule failed');
     }
   },
 
@@ -128,7 +132,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.saveCloudSettings(userId, newSettings);
       } catch (error) {
-        console.error('Failed to sync settings to cloud:', error);
+        __DEV__ && console.warn('Sync settings to cloud failed');
       }
     }
   },
@@ -153,7 +157,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.saveCloudSettings(userId, newSettings);
       } catch (e) {
-        console.error('Failed to sync reminder to cloud:', e);
+        __DEV__ && console.warn('Sync reminder to cloud failed');
       }
     }
   },
@@ -170,7 +174,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.saveCloudSettings(userId, newSettings);
       } catch (error) {
-        console.error('Failed to sync theme to cloud:', error);
+        __DEV__ && console.warn('Sync theme to cloud failed');
       }
     }
   },
@@ -198,7 +202,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       set({ todayLog: log });
       await storage.saveDailyLog(log);
     } catch (error) {
-      console.error('Failed to sync today log from cloud:', error);
+      __DEV__ && console.warn('Sync today log from cloud failed');
     }
   },
 
@@ -225,7 +229,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.addCloudMeal(userId, newMeal, today);
       } catch (error) {
-        console.error('Failed to sync meal to cloud:', error);
+        __DEV__ && console.warn('Sync meal to cloud failed');
       }
     }
   },
@@ -244,7 +248,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.updateCloudMeal(meal);
       } catch (error) {
-        console.error('Failed to sync meal update to cloud:', error);
+        __DEV__ && console.warn('Sync meal update to cloud failed');
       }
     }
   },
@@ -263,7 +267,7 @@ export const useMealStore = create<MealStore>((set, get) => ({
       try {
         await cloudData.deleteCloudMeal(mealId);
       } catch (error) {
-        console.error('Failed to sync meal deletion to cloud:', error);
+        __DEV__ && console.warn('Sync meal deletion to cloud failed');
       }
     }
   },

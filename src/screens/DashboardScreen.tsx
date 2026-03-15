@@ -52,7 +52,7 @@ export function DashboardScreen() {
     setSyncStatus('syncing');
     try {
       await Promise.all([loadSettings(), loadTodayLog()]);
-      setSyncStatus('synced');
+      if (useMealStore.getState().syncStatus !== 'offline') setSyncStatus('synced');
     } catch {
       setSyncStatus('offline');
     }
@@ -63,7 +63,12 @@ export function DashboardScreen() {
     let mounted = true;
     setSyncStatus('syncing');
     Promise.all([loadSettings(), loadTodayLog()])
-      .then(() => { if (mounted) setSyncStatus('synced'); })
+      .then(() => {
+        if (mounted) {
+          const { syncStatus: s } = useMealStore.getState();
+          if (s !== 'offline') setSyncStatus('synced');
+        }
+      })
       .catch(() => { if (mounted) setSyncStatus('offline'); });
     return () => { mounted = false; };
   }, []);

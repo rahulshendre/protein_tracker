@@ -37,7 +37,7 @@ export async function saveCloudSettings(userId: string, settings: UserSettings):
     });
 
   if (error) {
-    console.error('Error saving cloud settings:', error);
+    if (__DEV__) console.warn('Cloud settings sync failed:', error.message);
     throw error;
   }
 }
@@ -55,11 +55,11 @@ export async function getCloudMeals(userId: string, date: string): Promise<Meal[
     .order('timestamp', { ascending: true });
 
   if (error) {
-    console.error('Error fetching cloud meals:', error);
-    return [];
+    if (__DEV__) console.warn('Fetch cloud meals failed:', error.message);
+    throw error;
   }
 
-  return data.map((row) => ({
+  return (data ?? []).map((row) => ({
     id: row.id,
     name: row.name,
     proteinGrams: row.protein_grams,
@@ -80,7 +80,7 @@ export async function addCloudMeal(userId: string, meal: Meal, date: string): Pr
   });
 
   if (error) {
-    console.error('Error adding cloud meal:', error);
+    if (__DEV__) console.warn('Add cloud meal failed:', error.message);
     throw error;
   }
 }
@@ -96,7 +96,7 @@ export async function updateCloudMeal(meal: Meal): Promise<void> {
     .eq('id', meal.id);
 
   if (error) {
-    console.error('Error updating cloud meal:', error);
+    if (__DEV__) console.warn('Update cloud meal failed:', error.message);
     throw error;
   }
 }
@@ -108,7 +108,7 @@ export async function deleteCloudMeal(mealId: string): Promise<void> {
     .eq('id', mealId);
 
   if (error) {
-    console.error('Error deleting cloud meal:', error);
+    if (__DEV__) console.warn('Delete cloud meal failed:', error.message);
     throw error;
   }
 }
@@ -133,7 +133,7 @@ export async function getCloudMealsForDateRange(
     .order('timestamp', { ascending: true });
 
   if (error) {
-    console.error('Error fetching week meals:', error);
+    if (__DEV__) console.warn('Fetch week meals failed:', error.message);
     return [];
   }
 
@@ -159,7 +159,7 @@ export async function getCloudHistory(userId: string, limit: number = 30): Promi
     .order('date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching cloud history:', error);
+    if (__DEV__) console.warn('Fetch cloud history failed:', error.message);
     return [];
   }
 
