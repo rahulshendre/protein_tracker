@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
   RefreshControl,
@@ -98,12 +97,53 @@ export function DashboardScreen() {
     }
   };
 
+  const renderHeader = () => (
+    <>
+      <View style={styles.progressSection}>
+        <ProgressBar
+          percentage={stats.percentComplete}
+          consumed={stats.totalProtein}
+          goal={settings.dailyProteinGoal}
+        />
+      </View>
+      <View style={[styles.waterSection, { backgroundColor: colors.surface }]}>
+        <View style={styles.waterHeader}>
+          <Text style={[styles.waterTitle, { color: colors.text }]}>Water</Text>
+          <Text style={[styles.waterCount, { color: colors.textSecondary }]}>
+            {settings.waterUnit === 'glasses'
+              ? `${Math.round(todayWater / GLASSES_ML)} / ${Math.round(settings.dailyWaterGoalMl / GLASSES_ML)} glasses`
+              : `${todayWater} / ${settings.dailyWaterGoalMl} ml`}
+          </Text>
+          <Text style={[styles.water7DayAvg, { color: colors.textSecondary }]}>
+            7-day avg: {settings.waterUnit === 'glasses' ? `${Math.round(water7DayAvg / GLASSES_ML)} glasses` : `${water7DayAvg} ml`}
+          </Text>
+        </View>
+        <TouchableOpacity style={[styles.waterAddBtn, { backgroundColor: colors.primaryLight }]} onPress={() => { mediumHaptic(); addWater(); }}>
+          <Text style={[styles.waterAddText, { color: colors.primary }]}>{settings.waterUnit === 'glasses' ? '+1 glass' : '+250 ml'}</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Meals</Text>
+        <Text style={[styles.mealCount, { color: colors.textSecondary }]}>{stats.mealsCount} meals</Text>
+      </View>
+    </>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyIcon}>🍽️</Text>
+      <Text style={[styles.emptyText, { color: colors.text }]}>No meals logged yet</Text>
+      <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+        Tap the + button to log your first meal and start hitting your protein goal
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
-      
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Sticky: today, calendar, settings */}
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View>
           <Text style={[styles.greeting, { color: colors.text }]}>Today's Progress</Text>
           <View style={styles.dateRow}>
@@ -114,107 +154,36 @@ export function DashboardScreen() {
           </View>
         </View>
         <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={[styles.headerButton, { backgroundColor: colors.surface }]} 
-            onPress={() => navigation.navigate('Physique')}
-          >
+          <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate('Physique')}>
             <Text style={styles.headerButtonText}>📷</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerButton, { backgroundColor: colors.surface }]} 
-            onPress={() => navigation.navigate('History')}
-          >
+          <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate('History')}>
             <Text style={styles.headerButtonText}>📅</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerButton, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.navigate('Settings')}
-          >
+          <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate('Settings')}>
             <Text style={styles.headerButtonText}>⚙️</Text>
           </TouchableOpacity>
         </View>
       </View>
-      
-      {/* Progress Section */}
-      <View style={styles.progressSection}>
-        <ProgressBar
-          percentage={stats.percentComplete}
-          consumed={stats.totalProtein}
-          goal={settings.dailyProteinGoal}
-        />
-      </View>
-
-      {/* Water Section */}
-      <View style={[styles.waterSection, { backgroundColor: colors.surface }]}>
-        <View style={styles.waterHeader}>
-          <Text style={[styles.waterTitle, { color: colors.text }]}>Water</Text>
-          <Text style={[styles.waterCount, { color: colors.textSecondary }]}>
-            {settings.waterUnit === 'glasses'
-              ? `${Math.round(todayWater / GLASSES_ML)} / ${Math.round(settings.dailyWaterGoalMl / GLASSES_ML)} glasses`
-              : `${todayWater} / ${settings.dailyWaterGoalMl} ml`}
-          </Text>
-          <Text style={[styles.water7DayAvg, { color: colors.textSecondary }]}>
-            7-day avg: {settings.waterUnit === 'glasses'
-              ? `${Math.round(water7DayAvg / GLASSES_ML)} glasses`
-              : `${water7DayAvg} ml`}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.waterAddBtn, { backgroundColor: colors.primaryLight }]}
-          onPress={() => { mediumHaptic(); addWater(); }}
-        >
-          <Text style={[styles.waterAddText, { color: colors.primary }]}>
-            {settings.waterUnit === 'glasses' ? '+1 glass' : '+250 ml'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Meals Section */}
-      <View style={styles.mealsSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Meals</Text>
-          <Text style={[styles.mealCount, { color: colors.textSecondary }]}>{stats.mealsCount} meals</Text>
-        </View>
-        
-        {todayLog?.meals && todayLog.meals.length > 0 ? (
-          <FlatList
-            data={todayLog.meals}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
-            )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.mealsList}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-          />
-        ) : (
-          <ScrollView
-            contentContainerStyle={styles.emptyState}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-          >
-            <Text style={styles.emptyIcon}>🍽️</Text>
-            <Text style={[styles.emptyText, { color: colors.text }]}>No meals logged yet</Text>
-            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-              Tap the + button to log your first meal and start hitting your protein goal
-            </Text>
-          </ScrollView>
+      <FlatList
+        data={todayLog?.meals ?? []}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
         )}
-      </View>
-      
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.mealsList}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      />
       {/* FAB */}
       <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleAddMeal}>
         <Text style={styles.fabText}>+</Text>
@@ -245,6 +214,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
+    paddingBottom: 2,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -278,6 +248,8 @@ const styles = StyleSheet.create({
   },
   progressSection: {
     paddingVertical: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   waterSection: {
     flexDirection: 'row',
@@ -312,9 +284,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
   },
-  mealsSection: {
-    flex: 1,
-  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -331,12 +300,11 @@ const styles = StyleSheet.create({
   },
   mealsList: {
     paddingBottom: 100,
+    flexGrow: 1,
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingVertical: SPACING.xl * 2,
     alignItems: 'center',
-    paddingBottom: 100,
   },
   emptyIcon: {
     fontSize: 48,
