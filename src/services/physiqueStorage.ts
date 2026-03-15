@@ -1,5 +1,6 @@
 /**
- * Physique entries: photo + weight + notes (local only).
+ * Physique entries: local cache + optional cloud sync.
+ * Cloud is source of truth when logged in; local used offline or when not logged in.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +16,15 @@ export async function getPhysiqueEntries(): Promise<PhysiqueEntry[]> {
   } catch (error) {
     console.error('Error reading physique entries:', error);
     return [];
+  }
+}
+
+export async function setPhysiqueEntries(entries: PhysiqueEntry[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.PHYSIQUE_ENTRIES, JSON.stringify(entries));
+  } catch (error) {
+    console.error('Error saving physique entries:', error);
+    throw error;
   }
 }
 

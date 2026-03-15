@@ -15,17 +15,32 @@ import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { PhysiqueEntry } from '../types';
 import * as physiqueStorage from '../services/physiqueStorage';
+import * as cloudData from '../services/supabaseData';
+import { useAuthStore } from '../stores/authStore';
 
 export function PhysiqueScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { user } = useAuthStore();
   const [entries, setEntries] = useState<PhysiqueEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadEntries = useCallback(async () => {
-    const list = await physiqueStorage.getPhysiqueEntries();
-    setEntries(list);
-  }, []);
+    const userId = user?.id;
+    if (userId) {
+      try {
+        const list = await cloudData.getCloudPhysiqueEntries(userId);
+        setEntries(list);
+        await physiqueStorage.setPhysiqueEntries(list);
+      } catch {
+        const list = await physiqueStorage.getPhysiqueEntries();
+        setEntries(list);
+      }
+    } else {
+      const list = await physiqueStorage.getPhysiqueEntries();
+      setEntries(list);
+    }
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {

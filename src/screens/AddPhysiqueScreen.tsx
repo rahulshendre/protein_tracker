@@ -17,20 +17,27 @@ import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { PhysiqueEntry } from '../types';
 import * as physiqueStorage from '../services/physiqueStorage';
+import * as cloudData from '../services/supabaseData';
+import { useAuthStore } from '../stores/authStore';
 
 export function AddPhysiqueScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { user } = useAuthStore();
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const pickImage = () => {
     launchImageLibrary(
-      { mediaType: 'photo', quality: 0.8 },
+      { mediaType: 'photo', quality: 0.8, includeBase64: true },
       (res) => {
-        if (res.didCancel || !res.assets?.[0]?.uri) return;
-        setImageUri(res.assets[0].uri);
+        if (res.didCancel || !res.assets?.[0]) return;
+        const asset = res.assets[0];
+        setImageUri(asset.uri ?? null);
+        setImageBase64(asset.base64 ?? null);
       }
     );
   };
@@ -45,15 +52,44 @@ export function AddPhysiqueScreen() {
       Alert.alert('Invalid weight', 'Enter a valid weight (e.g. 70).');
       return;
     }
-    const entry: PhysiqueEntry = {
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-      imageUri,
-      weight: w,
-      notes: notes.trim(),
-    };
-    await physiqueStorage.addPhysiqueEntry(entry);
-    navigation.goBack();
+    setSaving(true);
+    const id = uuidv4();
+    const createdAt = new Date().toISOString();
+    const notesTrimmed = notes.trim();
+    try {
+      const userId = user?.id;
+      if (userId && imageBase64) {
+        const imageUrl = await cloudData.uploadPhysiqueImage(userId, id, imageBase64);
+        await cloudData.addCloudPhysiqueEntry(userId, {
+          id,
+          createdAt,
+          imageUrl,
+          weight: w,
+          notes: notesTrimmed,
+        });
+        await physiqueStorage.addPhysiqueEntry({
+          id,
+          createdAt,
+          imageUri: imageUrl,
+          weight: w,
+          notes: notesTrimmed,
+        });
+      } else {
+        await physiqueStorage.addPhysiqueEntry({
+          id,
+          createdAt,
+          imageUri,
+          weight: w,
+          notes: notesTrimmed,
+        });
+      }
+      navigation.goBack();
+    } catch (e) {
+      __DEV__ && console.warn(e);
+      Alert.alert('Upload failed', 'Could not save to cloud. Try again or check your connection.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,8 +99,8 @@ export function AddPhysiqueScreen() {
           <Text style={[styles.backButton, { color: colors.primary }]}>← Cancel</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Add entry</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={[styles.saveButton, { color: colors.primary }]}>Save</Text>
+        <TouchableOpacity onPress={handleSave} disabled={saving}>
+          <Text style={[styles.saveButton, { color: colors.primary }]}>{saving ? 'Saving…' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 

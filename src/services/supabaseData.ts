@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
-import { Meal, DailyLog, UserSettings } from '../types';
+import { Meal, DailyLog, UserSettings, PhysiqueEntry } from '../types';
 import { DEFAULTS } from '../constants';
+
+const PHYSIQUE_BUCKET = 'physique';
 
 function parseReminderTimes(json: unknown, legacyTime?: string): [string, string, string] {
   if (json && typeof json === 'string') {
@@ -228,4 +230,107 @@ export async function getCloudDailyLog(userId: string, date: string): Promise<Da
     meals,
     goalGrams: settings?.dailyProteinGoal || DEFAULTS.dailyProteinGoal,
   };
+}
+
+// ============================================
+// PHYSIQUE (entries + storage)
+// ============================================
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const clean = base64.replace(/^data:image\/\w+;base64,/, '');
+  const atobFn = (globalThis as { atob?: (s: string) => string }).atob;
+  const chars = typeof atobFn === 'function' ? atobFn(clean) : decodeBase64(clean);
+  const out = new Uint8Array(chars.length);
+  for (let i = 0; i < chars.length; i++) out[i] = chars.charCodeAt(i);
+  return out;
+}
+
+function decodeBase64(s: string): string {
+  const key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let result = '';
+  let i = 0;
+  while (i < s.length) {
+    const a = key.indexOf(s[i++]);
+    const b = key.indexOf(s[i++]);
+    const c = key.indexOf(s[i++]);
+    const d = key.indexOf(s[i++]);
+    result += String.fromCharCode((a << 2) | (b >> 4));
+    if (c !== 64) result += String.fromCharCode(((b << 4) & 0xf0) | (c >> 2));
+    if (d !== 64) result += String.fromCharCode(((c << 6) & 0xc0) | d);
+  }
+  return result;
+}
+
+/** Upload image to Storage; returns public URL. Uses base64 from picker for cross-platform reliability. */
+export async function uploadPhysiqueImage(
+  userId: string,
+  entryId: string,
+  base64Data: string
+): Promise<string> {
+  const ext = base64Data.startsWith('data:') ? 'png' : 'jpg';
+  const path = `${userId}/${entryId}.${ext}`;
+  const byteNumbers = base64ToUint8Array(base64Data);
+
+  const { error } = await supabase.storage.from(PHYSIQUE_BUCKET).upload(path, byteNumbers, {
+    contentType: `image/${ext}`,
+    upsert: true,
+  });
+
+  if (error) {
+    if (__DEV__) console.warn('Physique image upload failed:', error.message);
+    throw error;
+  }
+
+  const { data: urlData } = supabase.storage.from(PHYSIQUE_BUCKET).getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+export async function getCloudPhysiqueEntries(userId: string): Promise<PhysiqueEntry[]> {
+  const { data, error } = await supabase
+    .from('physique_entries')
+    .select('id, created_at, image_url, weight, notes')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    if (__DEV__) console.warn('Fetch cloud physique failed:', error.message);
+    throw error;
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    imageUri: row.image_url,
+    weight: Number(row.weight),
+    notes: row.notes ?? '',
+  }));
+}
+
+export async function addCloudPhysiqueEntry(
+  userId: string,
+  entry: Omit<PhysiqueEntry, 'imageUri'> & { imageUrl: string }
+): Promise<void> {
+  const { error } = await supabase.from('physique_entries').insert({
+    id: entry.id,
+    user_id: userId,
+    created_at: entry.createdAt,
+    image_url: entry.imageUrl,
+    weight: entry.weight,
+    notes: entry.notes,
+  });
+
+  if (error) {
+    if (__DEV__) console.warn('Add cloud physique failed:', error.message);
+    throw error;
+  }
+}
+
+export async function deleteCloudPhysiqueEntry(userId: string, id: string): Promise<void> {
+  const { error } = await supabase.from('physique_entries').delete().eq('id', id).eq('user_id', userId);
+  if (error) {
+    if (__DEV__) console.warn('Delete cloud physique failed:', error.message);
+    throw error;
+  }
+  const paths = [`${userId}/${id}.jpg`, `${userId}/${id}.png`];
+  await supabase.storage.from(PHYSIQUE_BUCKET).remove(paths).catch(() => {});
 }
