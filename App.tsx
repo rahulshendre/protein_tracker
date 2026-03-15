@@ -17,6 +17,7 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { ResetPasswordScreen } from './src/screens/ResetPasswordScreen';
+import { SplashScreen } from './src/screens/SplashScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { useAuthStore } from './src/stores/authStore';
@@ -149,13 +150,9 @@ function AppContent() {
     setNeedsOnboarding(false);
   };
 
-  // Loading state
+  // Loading state (splash)
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <SplashScreen />;
   }
 
   // Show password reset screen if opened via deep link

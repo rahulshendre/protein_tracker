@@ -31,7 +31,7 @@ export function MealCard({ meal, onEdit, onDelete }: MealCardProps) {
   
   return (
     <TouchableOpacity 
-      style={[styles.container, { backgroundColor: colors.surface }]} 
+      style={[styles.container, { backgroundColor: colors.surface, borderWidth: 0, borderColor: 'transparent' }]} 
       onPress={() => onEdit(meal)} 
       activeOpacity={0.7}
     >
@@ -76,11 +76,7 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     marginHorizontal: SPACING.md,
     marginVertical: SPACING.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 0,
   },
   iconContainer: {
     width: 44,

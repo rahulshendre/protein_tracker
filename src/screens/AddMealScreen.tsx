@@ -17,6 +17,7 @@ import { useMealStore } from '../stores/mealStore';
 import { ThemedDialog } from '../components';
 import { MealType } from '../types';
 import { RootStackParamList } from '../navigation/types';
+import { lightHaptic } from '../utils/haptics';
 
 const mealTypes: { type: MealType; label: string; icon: string }[] = [
   { type: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -89,6 +90,7 @@ export function AddMealScreen() {
       } else {
         await addMeal(name.trim(), proteinValue, selectedType);
       }
+      lightHaptic();
       navigation.goBack();
     } catch (error) {
       showError('Error', 'Failed to save meal. Please try again.');

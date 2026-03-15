@@ -9,12 +9,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
-import { COLORS, FONT_SIZES, SPACING } from '../constants';
+import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { DailyLog } from '../types';
 import * as storage from '../services/storage';
 import * as cloudData from '../services/supabaseData';
 import { useAuthStore } from '../stores/authStore';
+import { HistorySkeleton } from '../components/Skeleton';
 
 interface HistoryItem {
   date: string;
@@ -122,15 +123,17 @@ export function HistoryScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, { color: colors.text }]}>Loading...</Text>
+        <View style={styles.skeletonContainer}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <HistorySkeleton key={i} />
+          ))}
         </View>
       ) : history.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📅</Text>
           <Text style={[styles.emptyText, { color: colors.text }]}>No history yet</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            Start logging meals to see your history
+            Log meals on the dashboard and they'll show up here by day
           </Text>
         </View>
       ) : (
@@ -148,7 +151,6 @@ export function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -158,20 +160,20 @@ const styles = StyleSheet.create({
   },
   backButton: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.primary,
   },
   title: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
-    color: COLORS.text,
   },
   list: {
+    padding: SPACING.md,
+  },
+  skeletonContainer: {
     padding: SPACING.md,
   },
   historyCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
@@ -182,11 +184,9 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.text,
   },
   mealsCount: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   statsSection: {
@@ -195,17 +195,10 @@ const styles = StyleSheet.create({
   proteinText: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.text,
   },
   statusText: {
     fontSize: FONT_SIZES.sm,
     marginTop: 2,
-  },
-  goalMet: {
-    color: COLORS.success,
-  },
-  goalMissed: {
-    color: COLORS.textSecondary,
   },
   emptyState: {
     flex: 1,
@@ -218,11 +211,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.text,
   },
   emptySubtext: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
     marginTop: SPACING.xs,
   },
 });

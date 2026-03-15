@@ -8,7 +8,8 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FONT_SIZES, SPACING, LIGHT_COLORS } from '../constants';
+import { FONT_SIZES, SPACING } from '../constants';
+import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
 
 interface OnboardingScreenProps {
@@ -16,6 +17,7 @@ interface OnboardingScreenProps {
 }
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+  const { colors } = useTheme();
   const { updateGoal } = useMealStore();
   const [goalInput, setGoalInput] = useState('150');
   const [showError, setShowError] = useState(false);
@@ -31,34 +33,34 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <Text style={styles.emoji}>💪</Text>
-        <Text style={styles.title}>Welcome to{'\n'}Protein Tracker</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Welcome to{'\n'}Protein Tracker</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Track your daily protein intake and reach your fitness goals
         </Text>
 
-        <View style={styles.inputSection}>
-          <Text style={styles.label}>What's your daily protein goal?</Text>
+        <View style={[styles.inputSection, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.label, { color: colors.text }]}>What's your daily protein goal?</Text>
           <View style={styles.inputRow}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.primary }]}
               value={goalInput}
               onChangeText={setGoalInput}
               keyboardType="number-pad"
               maxLength={3}
               placeholder="150"
-              placeholderTextColor="#BDBDBD"
+              placeholderTextColor={colors.disabled}
             />
-            <Text style={styles.unit}>grams</Text>
+            <Text style={[styles.unit, { color: colors.textSecondary }]}>grams</Text>
           </View>
-          <Text style={styles.hint}>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>
             Tip: 0.8-1g per pound of body weight is recommended for muscle building
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleContinue}>
           <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
       </View>
@@ -66,13 +68,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       {/* Error Dialog */}
       <Modal visible={showError} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.dialogBox}>
-            <Text style={styles.dialogTitle}>Invalid Goal</Text>
-            <Text style={styles.dialogMessage}>
+          <View style={[styles.dialogBox, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.dialogTitle, { color: colors.text }]}>Invalid Goal</Text>
+            <Text style={[styles.dialogMessage, { color: colors.textSecondary }]}>
               Please enter a value between 1 and 500
             </Text>
             <TouchableOpacity
-              style={styles.dialogButton}
+              style={[styles.dialogButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowError(false)}
             >
               <Text style={styles.dialogButtonText}>OK</Text>
@@ -84,12 +86,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   );
 }
 
-const colors = LIGHT_COLORS;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -104,18 +103,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.text,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
   subtitle: {
     fontSize: FONT_SIZES.md,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.xl,
   },
   inputSection: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: SPACING.lg,
     marginBottom: SPACING.xl,
@@ -123,7 +119,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: SPACING.md,
   },
   inputRow: {
@@ -134,20 +129,16 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: colors.primary,
     minWidth: 120,
   },
   unit: {
     fontSize: FONT_SIZES.xl,
-    color: colors.textSecondary,
     marginLeft: SPACING.sm,
   },
   hint: {
     fontSize: FONT_SIZES.sm,
-    color: colors.textSecondary,
   },
   button: {
-    backgroundColor: colors.primary,
     borderRadius: 12,
     padding: SPACING.md,
     alignItems: 'center',
@@ -167,7 +158,6 @@ const styles = StyleSheet.create({
   dialogBox: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: SPACING.lg,
     alignItems: 'center',
@@ -175,20 +165,17 @@ const styles = StyleSheet.create({
   dialogTitle: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   dialogMessage: {
     fontSize: FONT_SIZES.md,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.lg,
     lineHeight: 22,
   },
   dialogButton: {
     width: '100%',
-    backgroundColor: colors.primary,
     borderRadius: 10,
     padding: SPACING.md,
     alignItems: 'center',

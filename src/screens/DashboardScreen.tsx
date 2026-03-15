@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,9 +16,10 @@ import { format } from 'date-fns';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
 import { useMealStore } from '../stores/mealStore';
-import { ProgressBar, MealCard, ThemedDialog } from '../components';
+import { ProgressBar, MealCard, ThemedDialog, SwipeableRow } from '../components';
 import { RootStackParamList } from '../navigation/types';
 import { Meal } from '../types';
+import { mediumHaptic } from '../utils/haptics';
 
 type DashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
@@ -39,7 +42,15 @@ export function DashboardScreen() {
   // Delete confirmation dialog state
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [mealToDelete, setMealToDelete] = useState<string | null>(null);
-  
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadSettings(), loadTodayLog()]);
+    setRefreshing(false);
+  }, []);
+
   useEffect(() => {
     loadSettings();
     loadTodayLog();
@@ -60,6 +71,7 @@ export function DashboardScreen() {
 
   const confirmDelete = () => {
     if (mealToDelete) {
+      mediumHaptic();
       deleteMeal(mealToDelete);
       setMealToDelete(null);
     }
@@ -112,19 +124,39 @@ export function DashboardScreen() {
             data={todayLog.meals}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
+              <SwipeableRow onDelete={() => handleDeleteMeal(item.id)}>
+                <MealCard meal={item} onEdit={handleEditMeal} onDelete={handleDeleteMeal} />
+              </SwipeableRow>
             )}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.mealsList}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
           />
         ) : (
-          <View style={styles.emptyState}>
+          <ScrollView
+            contentContainerStyle={styles.emptyState}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
+          >
             <Text style={styles.emptyIcon}>🍽️</Text>
             <Text style={[styles.emptyText, { color: colors.text }]}>No meals logged yet</Text>
             <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-              Tap the + button to add your first meal
+              Tap the + button to log your first meal and start hitting your protein goal
             </Text>
-          </View>
+          </ScrollView>
         )}
       </View>
       

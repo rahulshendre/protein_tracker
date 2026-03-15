@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
@@ -8,6 +8,8 @@ const SIZE = 180;
 const STROKE_WIDTH = 12;
 const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CENTER = SIZE / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const ANIM_DURATION = 600;
 
 interface ProgressBarProps {
   percentage: number;
@@ -18,6 +20,10 @@ interface ProgressBarProps {
 export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
   const { colors } = useTheme();
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
+  const animatedValue = useRef(new Animated.Value(CIRCUMFERENCE)).current;
+  const [strokeOffset, setStrokeOffset] = useState(CIRCUMFERENCE);
+  const goalReachedScale = useRef(new Animated.Value(1)).current;
+  const prevPercent = useRef(clampedPercentage);
 
   const getProgressColor = () => {
     if (clampedPercentage >= 100) return colors.success;
@@ -26,15 +32,44 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
     return colors.error;
   };
 
-  // Circle circumference; stroke draws from 3 o'clock, so we offset to start from top
-  const circumference = 2 * Math.PI * RADIUS;
-  const strokeDashoffset = circumference - (clampedPercentage / 100) * circumference;
+  useEffect(() => {
+    const targetOffset = CIRCUMFERENCE - (clampedPercentage / 100) * CIRCUMFERENCE;
+    Animated.timing(animatedValue, {
+      toValue: targetOffset,
+      duration: ANIM_DURATION,
+      useNativeDriver: false,
+    }).start();
+  }, [clampedPercentage]);
+
+  useEffect(() => {
+    const id = animatedValue.addListener(({ value }) => setStrokeOffset(value));
+    return () => animatedValue.removeListener(id);
+  }, []);
+
+  useEffect(() => {
+    if (clampedPercentage >= 100 && prevPercent.current < 100) {
+      Animated.sequence([
+        Animated.timing(goalReachedScale, {
+          toValue: 1.2,
+          duration: 180,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.quad),
+        }),
+        Animated.timing(goalReachedScale, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.quad),
+        }),
+      ]).start();
+    }
+    prevPercent.current = clampedPercentage;
+  }, [clampedPercentage]);
 
   return (
     <View style={styles.container}>
       <View style={styles.ringWrapper}>
         <Svg width={SIZE} height={SIZE} style={styles.svg}>
-          {/* Background ring */}
           <Circle
             cx={CENTER}
             cy={CENTER}
@@ -43,7 +78,6 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
             strokeWidth={STROKE_WIDTH}
             fill="transparent"
           />
-          {/* Progress ring */}
           <Circle
             cx={CENTER}
             cy={CENTER}
@@ -51,8 +85,8 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
             stroke={getProgressColor()}
             strokeWidth={STROKE_WIDTH}
             fill="transparent"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeOffset}
             strokeLinecap="round"
             transform={`rotate(-90 ${CENTER} ${CENTER})`}
           />
@@ -66,11 +100,21 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
           </Text>
         </View>
       </View>
-      <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-        {clampedPercentage >= 100
-          ? '🎉 Goal reached!'
-          : `${goal - consumed}g remaining`}
-      </Text>
+      {clampedPercentage >= 100 ? (
+        <Animated.Text
+          style={[
+            styles.statusText,
+            { color: colors.success, fontWeight: '700' },
+            { transform: [{ scale: goalReachedScale }] },
+          ]}
+        >
+          🎉 Goal reached!
+        </Animated.Text>
+      ) : (
+        <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+          {goal - consumed}g remaining
+        </Text>
+      )}
     </View>
   );
 }
