@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { FONT_SIZES, SPACING } from '../constants';
 import { useTheme } from '../context/ThemeContext';
+
+const SIZE = 180;
+const STROKE_WIDTH = 12;
+const RADIUS = (SIZE - STROKE_WIDTH) / 2;
+const CENTER = SIZE / 2;
 
 interface ProgressBarProps {
   percentage: number;
@@ -20,24 +26,40 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
     return colors.error;
   };
 
+  // Circle circumference; stroke draws from 3 o'clock, so we offset to start from top
+  const circumference = 2 * Math.PI * RADIUS;
+  const strokeDashoffset = circumference - (clampedPercentage / 100) * circumference;
+
   return (
     <View style={styles.container}>
-      <View style={styles.progressContainer}>
-        <View style={[styles.circle, { borderColor: colors.border }]} />
-        <View 
-          style={[
-            styles.circle, 
-            styles.progressCircle,
-            { 
-              borderColor: getProgressColor(),
-              borderRightColor: 'transparent',
-              borderBottomColor: 'transparent',
-            }
-          ]} 
-        />
-        <View style={styles.centerContent}>
+      <View style={styles.ringWrapper}>
+        <Svg width={SIZE} height={SIZE} style={styles.svg}>
+          {/* Background ring */}
+          <Circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke={colors.border}
+            strokeWidth={STROKE_WIDTH}
+            fill="transparent"
+          />
+          {/* Progress ring */}
+          <Circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke={getProgressColor()}
+            strokeWidth={STROKE_WIDTH}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${CENTER} ${CENTER})`}
+          />
+        </Svg>
+        <View style={styles.centerContent} pointerEvents="none">
           <Text style={[styles.percentageText, { color: colors.text }]}>
-            {clampedPercentage}%
+            {Math.round(clampedPercentage)}%
           </Text>
           <Text style={[styles.consumedText, { color: colors.textSecondary }]}>
             {consumed}g / {goal}g
@@ -45,8 +67,8 @@ export function ProgressBar({ percentage, consumed, goal }: ProgressBarProps) {
         </View>
       </View>
       <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-        {clampedPercentage >= 100 
-          ? '🎉 Goal reached!' 
+        {clampedPercentage >= 100
+          ? '🎉 Goal reached!'
           : `${goal - consumed}g remaining`}
       </Text>
     </View>
@@ -58,21 +80,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.lg,
   },
-  progressContainer: {
-    width: 180,
-    height: 180,
+  ringWrapper: {
+    width: SIZE,
+    height: SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  circle: {
+  svg: {
     position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 12,
-  },
-  progressCircle: {
-    transform: [{ rotate: '-90deg' }],
   },
   centerContent: {
     alignItems: 'center',
