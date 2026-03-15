@@ -16,6 +16,8 @@ export type RootStackParamList = {
   Dashboard: undefined;
   AddMeal: { meal?: Meal } | undefined;
   History: undefined;
+  DayDetail: { date: string };
+  WeeklyStats: undefined;
   Settings: undefined;
 };
 

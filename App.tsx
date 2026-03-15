@@ -13,6 +13,8 @@ import { DashboardScreen } from './src/screens/DashboardScreen';
 import { AddMealScreen } from './src/screens/AddMealScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
+import { DayDetailScreen } from './src/screens/DayDetailScreen';
+import { WeeklyStatsScreen } from './src/screens/WeeklyStatsScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
@@ -80,6 +82,8 @@ function AppNavigator() {
       />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="DayDetail" component={DayDetailScreen} />
+      <Stack.Screen name="WeeklyStats" component={WeeklyStatsScreen} />
     </Stack.Navigator>
   );
 }

@@ -90,7 +90,11 @@ export function HistoryScreen() {
     const metGoal = percent >= 100;
 
     return (
-      <View style={[styles.historyCard, { backgroundColor: colors.surface }]}>
+      <TouchableOpacity
+        style={[styles.historyCard, { backgroundColor: colors.surface }]}
+        onPress={() => navigation.navigate('DayDetail', { date: item.date })}
+        activeOpacity={0.7}
+      >
         <View style={styles.dateSection}>
           <Text style={[styles.dateText, { color: colors.text }]}>
             {format(parseISO(item.date), 'EEE, MMM d')}
@@ -108,7 +112,7 @@ export function HistoryScreen() {
             {metGoal ? '✓ Goal met' : `${percent}%`}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -119,7 +123,9 @@ export function HistoryScreen() {
           <Text style={[styles.backButton, { color: colors.primary }]}>← Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>History</Text>
-        <View style={{ width: 50 }} />
+        <TouchableOpacity onPress={() => navigation.navigate('WeeklyStats')}>
+          <Text style={[styles.weekButton, { color: colors.primary }]}>Week</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -160,6 +166,10 @@ const styles = StyleSheet.create({
   },
   backButton: {
     fontSize: FONT_SIZES.md,
+  },
+  weekButton: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
   },
   title: {
     fontSize: FONT_SIZES.xl,
