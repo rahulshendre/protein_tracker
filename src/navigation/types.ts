@@ -10,6 +10,7 @@ export type RootStackParamList = {
   // Auth screens
   Login: undefined;
   Register: undefined;
+  ResetPassword: undefined;
   
   // App screens
   Dashboard: undefined;
